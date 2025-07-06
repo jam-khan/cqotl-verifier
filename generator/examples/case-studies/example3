@@ -2,9 +2,39 @@
 Def P0 : OType[bit, bit] := |false> @ < false|.
 Def P1 : OType[bit, bit] := |true> @ <true|.
 
+
+Prove pfProjMeasOpt: ProjMeasOptPair[(P0, P1)].
+    sorry. 
+QED.
+
 Var CX : OType[bit * bit, bit * bit].
+
+Prove pfCXUnitary : UOpt[CX].
+    sorry.
+QED.
+
 Var sADD : forall (x : CTerm[bit]), forall (y : CTerm[bit]), CTerm[bit].
 Var sSUB : forall (x : CTerm[bit]), forall (y : CTerm[bit]), CTerm[bit].
+
+(* prove a property about sADD and sSUB *)
+Prove LemmaSADD : forall (x : CTerm[bit]), forall (y : CTerm[bit]), 
+    (sADD @ ((sADD @ x) @ y)) @ ((sSUB @ y) @ x) = y.
+
+    sorry.
+
+QED.
+
+Prove Lemma1 : forall (x : CTerm[bit]), ~ ~ x = x.
+    intro x. simpl. refl.
+QED.
+
+Prove Lemma2 : forall (x : CTerm[bit]), 
+    forall (H : ~ x = true), x = false.
+
+    intro x. intro H.
+    rewrite <- Lemma1 @ x.
+    rewrite H. simpl. refl.
+QED.
 
 Def Psym4 := |((true, true), (true, true))> @ <((true, true), (true, true))| + 
             |((true, true), (true, false))> @ <((true, false), (true, true))| +
@@ -35,8 +65,8 @@ Prove Pf3 :
     forall (r : CVar[bit]), forall (r' : CVar[bit]), 
     forall (q1 : QReg[bit]), forall (q1' : QReg[bit]),
     forall (q2 : QReg[bit]), forall (q2' : QReg[bit]),
-    forall (U : OType[bit * bit, bit * bit]),
-    forall (U' : OType[bit, bit]),
+    forall (U : OType[bit * bit, bit * bit]), forall (HU : UOpt[U]),
+    forall (U' : OType[bit, bit]), forall (HU' : UOpt[U']),
 
     { true -> Psym4_(((q1, q2), (q1', q2')), ((q1, q2), (q1', q2'))) | 0O[bit]_(q1, q1)}
 
@@ -48,7 +78,7 @@ Prove Pf3 :
         else
             skip;
         end;
-
+        x := meas (P0, P1) q2;
         a := sADD @ x @ y;
         b := sSUB @ y @ x;
         r := sADD @ a @ b;
@@ -64,9 +94,130 @@ Prove Pf3 :
 
     {~(r == r') -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1)}.
 
+    intro x. intro x'. intro y. intro y'. intro a. intro a'. intro b. intro b'.
+    intro r. intro r'. intro q1. intro q1'. intro q2. intro q2'. intro U. intro HU.
+    intro U'. intro HU'.
+
+    r_seq -1 6 ~((sADD @ a @ b) == r') -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_assign. simpl_entail. refl.
 
 
-    sorry.
+    r_seq 7 -1 ~((sADD @ a @ b) == (sADD @ a' @ b')) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
 
+    r_assign. simpl_entail. refl.
+
+
+    r_seq -1 5 ~((sADD @ a @ (sSUB @ y @ x)) == (sADD @ a' @ b')) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_assign. simpl_entail. refl.
+
+
+    r_seq 6 -1 ~((sADD @ a @ (sSUB @ y @ x)) == (sADD @ a' @ (sSUB @ y' @ x'))) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_assign. simpl_entail. refl.
+
+
+    r_seq -1 4 ~((sADD @ (sADD @ x @ y) @ (sSUB @ y @ x)) == (sADD @ a' @ (sSUB @ y' @ x'))) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_assign. simpl_entail. refl.
+
+
+    r_seq 5 -1 ~((sADD @ (sADD @ x @ y) @ (sSUB @ y @ x)) == (sADD @ (sADD @ x' @ y') @ (sSUB @ y' @ x'))) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_assign. simpl_entail. refl.
+
+    r_seq -1 3 ~((sADD @ (sADD @ x @ y) @ (sSUB @ y @ x)) == (sADD @ (sADD @ x' @ y') @ (sSUB @ y' @ x'))) -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1). choose 2.
+
+    r_meas.
+        simpl_entail. split.
+            cq_entail. split.
+                rewrite LemmaSADD @ false @ y.
+                rewrite LemmaSADD @ x' @ y'.
+                rewrite LemmaSADD @ x @ y.
+                intro H. rewrite H. simpl. simpl_entail. refl.
+
+                
+                rewrite LemmaSADD @ true @ y.
+                rewrite LemmaSADD @ x' @ y'.
+                rewrite LemmaSADD @ x @ y.
+                intro H. rewrite H. simpl. simpl_entail. refl.
+
+                cylinder_ext (q1, q2). dirac. simpl_entail. refl.
+
+    (* critical step *)
+    r_post (~(y == y') -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1)).
+    simpl_entail. simpl. cq_entail.
+        rewrite LemmaSADD @ x @ y. rewrite LemmaSADD @ x' @ y'.
+        intro H. rewrite H. simpl. simpl_entail. refl.
+
+    r_seq -1 3 (~(y == y') -> 0O[bit]_(q1, q1) | 0O[bit]_(q1, q1)). choose 2.
+
+    r_if q1. simpl.
+        r_unitary. dirac. cylinder_ext (q1, q2). dirac. 
+            simpl_entail. simpl. cq_entail.
+            intro H. rewrite H. simpl.
+            rewrite Lemma2 @ (y == y') @ H.
+            simpl. simpl_entail. refl.
+
+        r_skip. simpl. simpl_entail. simpl. cq_entail.
+            intro H. rewrite H. simpl. dirac. simpl_entail. refl.
+
+    r_seq -1 -1 (true -> Psym4_(((q1, q2), (q1', q2')), ((q1, q2), (q1', q2'))) | 0O[bit]_(q1, q1)). choose 2.
+
+    r_meas_meas id. refl.
+
+        simpl. split.
+            intro H. dirac. 
+            (* qcoupling construction, backend needed *)
+            sorry.
+
+            intro H. dirac. 
+            (* qcoupling construction, backend needed *)
+            sorry.
+
+    r_seq 2 -1 (true -> Psym4_(((q1, q2), (q1', q2')), ((q1, q2), (q1', q2'))) | 0O[bit]_(q1, q1)). choose 2.
+
+    r_meas.
+        simpl_entail. split.
+            cq_entail. split.
+                intro H. simpl.
+                (* backend *)
+                sorry.
+
+                intro H. simpl.
+                (* backend *)
+                sorry.
+
+            cylinder_ext (q1, q1'). dirac. simpl_entail. refl.
+
+    r_seq -1 2 (true -> Psym4_(((q1, q2), (q1', q2')), ((q1, q2), (q1', q2'))) | 0O[bit]_(q1, q1)). choose 2.
+
+    r_unitary.
+        dirac. simpl_entail. split.
+            cq_entail. simpl.
+                intro H. 
+                (* backend *)
+                sorry.
+
+                cylinder_ext (q2, q1). dirac. simpl_entail. refl.
+
+    r_seq 1 0 (true -> (U^D_((q1', q2'), (q1', q2')) @ Psym4_(((q1, q2), (q1', q2')), ((q1, q2), (q1', q2'))) @ U_((q1', q2'), (q1', q2'))) | 0O[bit]_(q1, q1)). choose 2.
+
+    r_unitary.
+        dirac. simpl_entail. simpl.
+        (* backend *)
+        sorry.
+
+    
+
+    r_unitary.
+        dirac. simpl_entail. split.
+            cq_entail. simpl.
+                intro H. 
+                (* backend *)
+                sorry.
+
+            cylinder_ext (q1, q2). dirac. simpl_entail. refl.
 
 QED.

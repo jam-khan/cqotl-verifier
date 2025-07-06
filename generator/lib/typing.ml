@@ -768,8 +768,12 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           (* type conjunction *)
           | _ when type_t1 = Symbol _type && type_t2 = Symbol _type ->
             Type (Symbol _type)
-          (* boolean conjunction *)
-          | _ when type_t1 = Fun {head=_cterm; args=[Symbol _bit]} && type_t2 = type_t1 ->
+          (* boolean conjunction, allow CVar[bit] here *)
+          | _ when 
+            (type_t1 = Fun {head=_cterm; args=[Symbol _bit]} ||
+             type_t1 = Fun {head=_cvar; args=[Symbol _bit]}) && 
+            (type_t2 = Fun {head=_cterm; args=[Symbol _bit]} ||
+             type_t2 = Fun {head=_cvar; args=[Symbol _bit]}) ->
               Type (Fun {head=_cterm; args=[Symbol _bit]})
           (* cq-projector conjunction *)
           | _ when type_t1 = Symbol _cqproj && type_t2 = Symbol _cqproj ->
@@ -894,7 +898,7 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
               end 
 
             (* Sasaki implication (DType) *)
-            | Fun {head=head1; args=[tt1; tt2]}, Fun {head=head2; args=[tt1'; tt2']} when head1 = _dtype && head2 = _dtype && tt1=tt2 && tt1'=tt2' && tt1=tt1' ->
+            | Fun {head=head1; args=[tt1; tt2]}, Fun {head=head2; args=[tt1'; tt2']} when head1 = _dtype && head2 = _dtype && tt1=tt2 && tt1'=tt2' ->
                 Type (Fun {head=_dtype; args=[tt1; tt1]})
 
             | _ ->
