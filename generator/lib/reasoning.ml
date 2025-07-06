@@ -12,7 +12,8 @@ let simpl_rules = [
   parse_rw_rule "X /\\ (true = true) --> X";
   parse_rw_rule "(true = true) /\\ X --> X";
 
-  parse_rw_rule "false /\\ false --> false";
+  parse_rw_rule "A /\\ false --> false";
+  parse_rw_rule "false /\\ A --> false";
   parse_rw_rule "true -> false --> false";
   parse_rw_rule "A : CTerm[BIT] |- true -> A --> A";
   parse_rw_rule "A : CTerm[BIT] |- false -> A --> true";
@@ -189,11 +190,15 @@ let dirac_rules = [
   parse_rw_rule "A @ 1O[T] --> A";
 
   parse_rw_rule "0O[T, T] /\\ B --> 0O[T, T]";
+  parse_rw_rule "B /\\ 0O[T, T] --> 0O[T, T]";
   parse_rw_rule "1O[T] /\\ B --> B";
   parse_rw_rule "B /\\ 1O[T] --> B";
 
   parse_rw_rule "1O[T]_(q, q) /\\ B --> B";
   parse_rw_rule "B /\\ 1O[T]_(q, q) --> B";
+
+  parse_rw_rule "0O[T, T]_(q, q) /\\ B --> 0O[T, T]_(q, q)";
+  parse_rw_rule "B /\\ 0O[T, T]_(q, q) --> 0O[T, T]_(q, q)";
 
   (* parse_rw_rule "1O[BIT]_(q, q) /\\ 1O[BIT]_(q, q) --> 1O[BIT]_(q, q)"; *)
 
@@ -216,6 +221,10 @@ let dirac_rules = [
   parse_rw_rule "U @@ (p /\\ q) --> (U @@ p) /\\ (U @@ q)";
   parse_rw_rule "U @@ (psi -> P) --> psi -> (U @@ P)";
   parse_rw_rule "U @@ A --> (U @ A) @ U^D";
+
+  parse_rw_rule "1O[T1] * 0O[T2, T2] --> 0O[T1 * T2, T1 * T2]";
+
+  parse_rw_rule "0O[T1, T1] * 1O[T2] --> 0O[T1 * T2, T1 * T2]";
 
   parse_rw_rule "INSPACE[rho_(q, q), P_(q, q)] --> INSPACE[rho, P]";
   parse_rw_rule "tr[P_(q, q)] --> tr[P]";
