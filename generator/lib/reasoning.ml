@@ -16,6 +16,8 @@ let simpl_rules = [
   parse_rw_rule "false /\\ A --> false";
   parse_rw_rule "true -> false --> false";
   parse_rw_rule "A : CTerm[BIT] |- true -> A --> A";
+  parse_rw_rule "A : CVar[BIT] |- true -> A --> A";
+
   parse_rw_rule "A : CTerm[BIT] |- false -> A --> true";
   parse_rw_rule "A -> true --> true";
   parse_rw_rule "A -> false --> ~ A";

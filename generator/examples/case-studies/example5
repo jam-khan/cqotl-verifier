@@ -1,0 +1,114 @@
+
+Var H : OType[bit, bit].
+
+Prove pfHUnitary : UOpt[H].
+    sorry.
+QED.
+
+Var X : OType[bit, bit].
+
+Prove pfXUnitary : UOpt[X].
+    sorry.
+QED.
+
+Def P0 : OType[bit, bit] := |false> @ <false|.
+Def P1 : OType[bit, bit] := |true> @ <true|.
+
+Prove pfProjMeasOpt: ProjMeasOptPair[(P0, P1)].
+    sorry. 
+QED.
+
+Var PEqBasis : OType[bit * bit, bit * bit].
+
+Prove pfPEqBasisU : UOpt[PEqBasis].
+
+    sorry.
+
+QED.
+
+Var HalfI : OType[bit, bit].
+
+Var miu : PDist[bit].
+
+
+Prove pf :
+    forall (b : CVar[bit]), forall (q : QReg[bit]),
+    forall (b' : CVar[bit]), forall (q' : QReg[bit]),
+
+    { true -> PEqBasis_((q, q'), (q, q')) | HalfI_(q, q) } 
+
+        b <-$ miu;
+        if b then 
+            unitary X q;
+        else
+            skip;
+        end;
+
+            ~
+
+        unitary H q';
+        b' := meas (P0, P1) q';
+
+    { true -> PEqBasis_((q, q'), (q, q')) | (|false> @ <false|)_(q, q) }.
+
+    intro b. intro q. intro b'. intro q'.
+
+    (* Pause. *)
+
+    r_seq 0 1 true -> ((1O[bit] * H) @ PEqBasis @ (1O[bit] * H))_((q, q'), (q, q')) | HalfI_(q, q).
+
+    r_unitary. dirac. simpl_entail. split.
+        cq_entail. intro H. simpl. cylinder_ext (q, q'). dirac.
+        simpl_entail.
+
+        (* backend *)
+        sorry.
+
+        (* backend *)
+        sorry.
+
+    (* Pause. *)
+
+    r_seq 1 2 
+        (b -> ((X^D * 1O[bit]) @ PEqBasis @ (X * 1O[bit]))_((q, q'), (q, q'))) 
+        /\ (~b -> PEqBasis_((q, q'), (q, q'))) | 1O[bit]_(q, q).
+        
+        choose 2.
+
+    r_if q.
+        r_unitary. dirac. simpl_entail. split.
+            cq_entail. 
+                intro H. simpl. case b.
+                rewrite CASE0. simpl. dirac. cylinder_ext (q, q'). dirac. simpl_entail. refl.
+                rewrite CASE1. simpl. dirac. simpl_entail. refl.
+
+                (* backend *)
+                sorry.
+
+        r_skip. simpl. simpl_entail. split.
+            cq_entail. 
+                intro H. simpl. case b.
+                rewrite CASE0. simpl. dirac. simpl_entail. refl.
+                rewrite CASE1. simpl. dirac. simpl_entail. refl.
+                refl.
+
+    Pause.
+
+    r_seq 1 0 ((true -> (((1O[bit] * H) @ PEqBasis) @ (1O[bit] * H))_((q, q'), (q, q'))) | HalfI_(q, q)).
+    
+    choose 2.
+
+    r_meas.
+
+    simpl_entail. split.
+    cq_entail. simpl.
+        
+
+                
+                
+
+    
+
+
+
+    
