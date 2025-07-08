@@ -3,7 +3,7 @@
 Def P0 : OType[bit, bit] := |false> @ < false|.
 Def P1 : OType[bit, bit] := |true> @ <true|.
 
-Def Psym2 := |(true, false)> @ <(false, true)| + |(false, true)> @ <(true, false)| + |(true, true)> @ <(true, true)| + |(false, false)> @ <(false, false)|.
+Var Psym2 : OType[bit * bit, bit * bit].
 
 Prove Lemma1 : forall (x : CTerm[bit]), ~ ~ x = x.
 
@@ -16,6 +16,23 @@ Prove Lemma2 : forall (x : CTerm[bit]),
     intro x. intro H.
     rewrite <- Lemma1 @ x.
     rewrite H. simpl. refl.
+QED.
+
+Prove Lemma3 : forall (x : CTerm[bit]), forall (y : CTerm[bit]),
+    forall (H : ((x == y) = true)), x = y.
+
+    intro x. intro y.
+    case x. 
+        rewrite CASE0.
+        case y. 
+            rewrite CASE00. intro H. refl.
+            rewrite CASE1. simpl. intro H. destruct H.
+
+        rewrite CASE1.
+        case y. 
+            rewrite CASE0. simpl. intro H. destruct H.
+            rewrite CASE10. intro H. refl.
+
 QED.
 
 Prove pfU : 
@@ -82,10 +99,10 @@ Prove Pf2 :
 
     intro x. intro x'. intro y. intro y'.
     intro q1. intro q1'. intro q2. intro q2'. intro U. intro HU.
-    expand Psym2.
+    
     r_seq -1 -1 (~(x == x') -> 0O[bit]_(q1, q1) /\ ((x == x') -> Psym2_((q2, q2'), (q2, q2')))) | 0O[bit]_(q1, q1).
 
-    choose 2. expand Psym2.
+    choose 2.
     
     r_meas_meas id.
 
@@ -127,10 +144,18 @@ Prove Pf2 :
     choose 2.
 
     r_if q1.
-        (* l_unitary. *)
-        (* Pause. *)
-        (* sorry. *)
-        sorry. 
+        r_unitary. dirac. simpl_entail. split.
+            cq_entail. simpl. split.
+                intro H. rewrite H. simpl. dirac. simpl_entail. refl.
+                intro H. rewrite H. simpl. dirac. rewrite <- (Lemma3 @ x @ x' @ H).
+                    case x. 
+                        rewrite CASE0. simpl. dirac. cylinder_ext (q2, q2'). dirac. simpl_entail. 
+                        (* backend *)
+                        by_rocq.
+
+                        rewrite CASE1. simpl. dirac. simpl_entail. refl.
+
+            cylinder_ext (q1, q2'). dirac. simpl_entail. refl.
 
         r_skip.
           simpl_entail. 
