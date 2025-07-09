@@ -51,64 +51,142 @@ Prove pf :
 
     { true -> PEqBasis_((q, q'), (q, q')) | (|false> @ <false|)_(q, q) }.
 
-    intro b. intro q. intro b'. intro q'.
-
     (* Pause. *)
 
-    r_seq 0 1 true -> ((1O[bit] * H) @ PEqBasis @ (1O[bit] * H))_((q, q'), (q, q')) | HalfI_(q, q).
+    intro b. intro q. intro b'. intro q'.
+
+    (* the initial judgement *)
+    (* Pause. *)
+
+
+    (* change to a equivalent but more precise assertion *)
+    r_post  ((b == b') /\ (b == true)) -> (|(b, b')> @ <(b, b')| + |(~b, ~b')> @ <(~b, ~b')|)_((q, q'), (q, q'))
+        /\ ((b == b') /\ (b == false)) -> (|(b, b')> @ <(b, b')| + |(~b, ~b')> @ <(~b, ~b')|)_((q, q'), (q, q'))
+        /\ (~(b == b')) -> 0O[bit]_(q, q) | (|false> @ <false|)_(q, q).
+
+        strong_entail. dirac. simpl_entail. split.
+            intro H. refl.
+            simpl. split. split. intro H. refl. intro H. refl. intro H. refl.
+
+    r_seq 0 1 true -> H^D_(q', q') @ PEqBasis_((q, q'), (q, q')) @ H_(q', q') | HalfI_(q, q).
+
 
     r_unitary. dirac. simpl_entail. split.
         cq_entail. intro H. simpl. cylinder_ext (q, q'). dirac.
         simpl_entail.
-
+        
         (* backend *)
         sorry.
 
         (* backend *)
+        (* Pause. *)
         sorry.
 
     (* Pause. *)
+    (* unitary H discharged. *)
 
     r_seq 1 2 
-        (b -> ((X^D * 1O[bit]) @ PEqBasis @ (X * 1O[bit]))_((q, q'), (q, q'))) 
-        /\ (~b -> PEqBasis_((q, q'), (q, q'))) | 1O[bit]_(q, q).
+        ((b == b') /\ (b == true)) -> (|(~b, b')> @ <(~b, b')| + |(b, ~b')> @ <(b, ~b')|)_((q, q'), (q, q'))
+        /\ ((b == b') /\ (b == false)) -> (|(b, b')> @ <(b, b')| + |(~b, ~b')> @ <(~b, ~b')|)_((q, q'), (q, q'))
+        /\ (~(b == b')) -> 0O[bit]_(q, q) | (|b> @ <b|)_(q, q).
         
         choose 2.
 
+    (* Pause. *)
+
     r_if q.
-        r_unitary. dirac. simpl_entail. split.
-            cq_entail. 
-                intro H. simpl. case b.
-                rewrite CASE0. simpl. dirac. cylinder_ext (q, q'). dirac. simpl_entail. refl.
-                rewrite CASE1. simpl. dirac. simpl_entail. refl.
+    (* Pause. *)
 
-                (* backend *)
-                sorry.
-
-        r_skip. simpl. simpl_entail. split.
-            cq_entail. 
-                intro H. simpl. case b.
-                rewrite CASE0. simpl. dirac. simpl_entail. refl.
-                rewrite CASE1. simpl. dirac. simpl_entail. refl.
-                refl.
-
-    Pause.
-
-    r_seq 1 0 ((true -> (((1O[bit] * H) @ PEqBasis) @ (1O[bit] * H))_((q, q'), (q, q'))) | HalfI_(q, q)).
-    
-    choose 2.
-
-    r_meas.
-
-    simpl_entail. split.
-    cq_entail. simpl.
-        
-
-                
-                
-
-    
+        r_unitary. 
+        dirac.
 
 
+        case b. case b'.
+        rewrite CASE0. rewrite CASE00. simpl.
 
-    
+            simpl_entail. split. cq_entail. simpl. dirac. split. 
+            (* backend *)
+            sorry.
+            intro H. simpl_entail. refl.
+            (* backend *)
+            sorry.
+
+        rewrite CASE0. rewrite CASE1. simpl. dirac.
+            simpl_entail. split. cq_entail. simpl. dirac.
+                split. intro H. destruct H0.
+                intro H. simpl_entail. refl.
+
+            (* backend *)
+            sorry.
+
+        case b'.
+        rewrite CASE1. rewrite CASE0. simpl. dirac.
+            simpl_entail. split. cq_entail. simpl. dirac.
+                split. intro H. destruct H0.
+                intro H. simpl_entail. refl.
+
+            (* backend *)
+            sorry.
+
+        rewrite CASE1. rewrite CASE10. simpl. dirac.
+            simpl_entail. split. cq_entail. simpl. dirac.
+                split. intro H. destruct H0.
+                intro H. simpl_entail. refl.
+
+            (* backend *)
+            (* Pause. *)
+            sorry.
+
+        r_skip. case b. case b'.
+            rewrite CASE0. rewrite CASE00. simpl. dirac.
+            strong_entail. simpl. dirac.
+                simpl_entail. split. intro H. destruct H0.
+                split. intro H. refl. intro H. refl.
+
+            rewrite CASE0. rewrite CASE1. simpl. dirac.
+            strong_entail. simpl. dirac.
+                simpl_entail. split. intro H. destruct H0.
+                split. intro H. refl.
+                intro H. destruct H0.
+
+            case b'.
+            rewrite CASE1. rewrite CASE0. simpl. dirac.
+                strong_entail. simpl. dirac.
+                split. intro H. destruct H0.
+                split. intro H. destruct H0.
+                intro H. simpl_entail. refl.
+
+            rewrite CASE1. rewrite CASE10. simpl. dirac.
+                strong_entail. simpl. dirac.
+                split. intro H. destruct H0.
+                split. intro H. destruct H0.
+                intro H. simpl_entail. refl.
+
+    judge_swap.
+
+    (* Pause. *)
+    r_meas_sample id. refl.
+
+        split. 
+            intro H.
+            (* backend *)
+            (* Pause. *)
+            sorry.
+
+            intro H.
+            (* backend *)
+            sorry.
+
+
+        simpl. strong_entail. split.
+            intro H. destruct H0.
+            intro H. cylinder_ext (q, q'). dirac.
+
+            (* backend *)
+            (* eseentially 
+                (|0+><0+| + |1-><1-|) @ (|00><00| + |11><11|) @ (|0+><0+| + |1-><1-|)
+                <= (|0+><0+| + |1-><1-|) @ I/2 @ (|0+><0+| + |1-><1-|)
+            *)
+            sorry.
+
+QED.

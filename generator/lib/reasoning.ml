@@ -7,6 +7,76 @@ open Typing
 (* open Pretty_printer *)
 
 
+let ciPi_merge (wfctx: wf_ctx) (t : terms) : terms option =
+  let rec get_conjunction_pairs (t: terms) : (terms * terms) list option =
+  match t with
+  | Fun {head; args=[ci; pi]} when head = _imply ->
+    begin match calc_type wfctx ci, calc_type wfctx pi with
+    | Type (Fun {head=head_ci; args=[arg_ci]}), Type (Fun {head=head_pi; _}) when (head_ci = _cterm || head_ci = _cvar) && arg_ci = Symbol _bit && head_pi = _dtype ->
+      Some [(ci, pi)]
+    | _ -> None
+    end
+
+  | Fun {head; args=[t1; t2]} when head = _wedge ->
+    begin match get_conjunction_pairs t1, get_conjunction_pairs t2 with
+    | Some p1, Some p2 -> Some (p1 @ p2)
+    | _ -> None
+    end
+  
+  | _ -> None
+  in
+  let conj_list = 
+    match get_conjunction_pairs t with
+    | Some pairs ->
+      let rec add_pair (ci, pi) acc =
+        match acc with
+        | [] -> [(ci, pi)]
+        | (ci', pi') :: tl when ci = ci' ->
+          (* merge the pi *)
+          (ci', Fun {head=_wedge; args=[pi'; pi]}) :: tl
+        | (ci', pi') :: tl -> (ci', pi') :: add_pair (ci, pi) tl
+      in
+      let rec aux (pairs : (terms * terms) list) acc =
+        begin match pairs with
+        | [] -> acc
+        | (ci, pi) :: tl -> aux tl (add_pair (ci, pi) acc)
+        end
+      in 
+      let new_list = aux pairs [] in
+      (* check whether the conj_list is shorter *)
+      if List.length new_list < List.length pairs then
+        Some new_list
+      else 
+        None
+    | None -> None
+  in
+    match conj_list with
+    | None -> None
+    | Some conj_list ->
+      Some (
+      let rec fold_list ls =
+        match ls with
+        | [] -> failwith ("ciPi_merge: empty conjunction list.")
+        | [(ci, pi)] ->
+          Fun {
+            head = _imply;
+            args = [ci; pi]
+          }
+        | hd :: tl -> 
+          Fun {
+            head = _wedge;
+            args = [
+              Fun {
+                head = _imply;
+                args = [fst hd; snd hd]
+              };
+              fold_list tl
+            ]
+          }
+      in
+        fold_list conj_list
+      )
+
 (** the term rewriting rules in *)
 let simpl_rules = [  
   parse_rw_rule "X /\\ (true = true) --> X";
@@ -15,10 +85,10 @@ let simpl_rules = [
   parse_rw_rule "A /\\ false --> false";
   parse_rw_rule "false /\\ A --> false";
   parse_rw_rule "true -> false --> false";
-  parse_rw_rule "A : CTerm[BIT] |- true -> A --> A";
-  parse_rw_rule "A : CVar[BIT] |- true -> A --> A";
+  parse_rw_rule "A : CTerm[bit] |- true -> A --> A";
+  parse_rw_rule "A : CVar[bit] |- true -> A --> A";
 
-  parse_rw_rule "A : CTerm[BIT] |- false -> A --> true";
+  parse_rw_rule "A : CTerm[bit] |- false -> A --> true";
   parse_rw_rule "A -> true --> true";
   parse_rw_rule "A -> false --> ~ A";
 
@@ -32,13 +102,18 @@ let simpl_rules = [
   parse_rw_rule "false \\/ A --> A";
   parse_rw_rule "A \\/ false --> A";
 
+  parse_rw_rule "A : CTerm[bit] |- A \\/ ~ A --> true";
+  parse_rw_rule "A : CVar[bit] |- A \\/ ~ A --> true";
+  parse_rw_rule "A : CTerm[bit] |- ~ A \\/ A --> true";
+  parse_rw_rule "A : CVar[bit] |- ~ A \\/ A --> true";
+
   parse_rw_rule "true |-> A --> A";
   parse_rw_rule "A : OType[T, T] |- false |-> A_q --> 1O[T]_q";
   parse_rw_rule "true -> true --> true";
   parse_rw_rule "A == A --> true";
   parse_rw_rule "true == false --> false";
   parse_rw_rule "false == true --> false";
-  parse_rw_rule "A : CTerm[BIT] |- ~ A \\/ A --> true";
+  parse_rw_rule "A : CTerm[bit] |- ~ A \\/ A --> true";
   parse_rw_rule "~ true --> false";
   parse_rw_rule "~ false --> true";
 
@@ -47,7 +122,9 @@ let simpl_rules = [
 
 
 let simpl (typing: wf_ctx -> terms -> terms option) (wfctx : wf_ctx) (t : terms) : terms =
-  let simpl_transforms = List.map (fun r -> apply_rewriting_rule_all r typing wfctx) simpl_rules
+  let simpl_transforms = 
+    apply_trans_all ciPi_merge wfctx ::
+    List.map (fun r -> apply_rewriting_rule_all r typing wfctx) simpl_rules
   in
   (* apply_rewriting_rule  *)
   repeat_transforms simpl_transforms t
@@ -202,7 +279,7 @@ let dirac_rules = [
   parse_rw_rule "0O[T, T]_(q, q) /\\ B --> 0O[T, T]_(q, q)";
   parse_rw_rule "B /\\ 0O[T, T]_(q, q) --> 0O[T, T]_(q, q)";
 
-  (* parse_rw_rule "1O[BIT]_(q, q) /\\ 1O[BIT]_(q, q) --> 1O[BIT]_(q, q)"; *)
+  (* parse_rw_rule "1O[bit]_(q, q) /\\ 1O[bit]_(q, q) --> 1O[bit]_(q, q)"; *)
 
   parse_rw_rule "A_q @ B_q --> (A @ B)_q";
   parse_rw_rule "A_q /\\ B_q --> (A /\\ B)_q";
@@ -230,6 +307,9 @@ let dirac_rules = [
 
   parse_rw_rule "INSPACE[rho_(q, q), P_(q, q)] --> INSPACE[rho, P]";
   parse_rw_rule "tr[P_(q, q)] --> tr[P]";
+
+  parse_rw_rule "0O[T]_(q, q) + A --> A";
+  parse_rw_rule "A + 0O[T]_(q, q) --> A";
 ]
 
 
@@ -245,7 +325,7 @@ let dirac_simpl (typing : wf_ctx -> terms -> terms option) (wfctx : wf_ctx) (t :
 
 let simpl_entail_rules = [
   parse_rw_rule "A <= A --> true = true";
-  parse_rw_rule "A <= 1O[BIT] --> true = true";
+  parse_rw_rule "A <= 1O[bit] --> true = true";
   parse_rw_rule "psi | A <= phi | B --> (phi <= psi) /\\ (A <= B)";
   parse_rw_rule "A_q <= B_q --> (A <= B)";
   parse_rw_rule "0O[T, T] <= A --> true = true";
@@ -260,6 +340,83 @@ let simpl_entail (typing : wf_ctx -> terms -> terms option) (wfctx : wf_ctx) (t 
   (* apply_rewriting_rule  *)
   repeat_transforms simpl_entail_transforms t
     
+let strong_entail (wfctx : wf_ctx) (t: terms) : terms option =
+  (* match the term with 
+    phi | A <= psi | B
+    *)
+  match t with
+  | Fun {
+      head=head_entailment;
+      args=[
+        Fun {head=head_vbar1; args=[_; b]};
+        Fun {head=head_vbar2; args=[phi; a]};
+      ]
+    } when 
+      head_entailment = _entailment && 
+      head_vbar1 = _vbar && 
+      head_vbar2 = _vbar ->
+      let rec get_bigvee_classical (t: terms) : terms option =
+        match t with
+        | Fun {head; args=[bexpr; _]} when head = _imply ->
+          Some (bexpr)
+        | Fun {head; args=[t1; t2]} when head = _wedge ->
+          begin match get_bigvee_classical t1, get_bigvee_classical t2 with
+          | Some t1', Some t2' -> Some (Fun {head=_vee; args=[t1'; t2']})
+          | _ -> None
+          end
+        | _ -> None
+      in
+      let imply_goal_template = parse_terms "forall (pfvar : bexpr = true), (X @ B @ X <= X @ A @ X)" in
+      let rec get_imply_goal (t: terms) : terms option =
+        match t with
+        | Fun {head; args=[bexpr; p]} when head = _imply ->
+          let pfvar = fresh_name_for_ctx wfctx "pf" in
+          let s = 
+            [
+              ("pfvar", Symbol pfvar);
+              ("bexpr", bexpr);
+              ("X", p);
+              ("A", a);
+              ("B", b);
+            ]
+          in
+          Some (apply_subst_unique_var s imply_goal_template)
+        | Fun {head; args=[t1; t2]} when head = _wedge ->
+          begin match get_imply_goal t1, get_imply_goal t2 with
+          | Some t1', Some t2' -> Some (Fun {head=_wedge; args=[t1'; t2']})
+          | _ -> None
+          end
+        | _ -> None
+      in
+      begin match get_bigvee_classical phi, get_imply_goal phi with
+      | Some c, Some g2 -> 
+        let pfvar = fresh_name_for_ctx wfctx "pf" in
+        Some (
+          Fun {
+            head = _wedge;
+            args =[
+              Fun {
+                head = _forall;
+                args = [
+                  Symbol pfvar;
+                  Fun {
+                    head = _eq;
+                    args = [c; Symbol _false];
+                  };
+                  Fun {
+                    head = _entailment;
+                    args = [b; a];
+                  }
+                ];
+              };
+              g2;
+            ]
+          }
+      )
+      | _ -> None
+      end
+
+  | _ -> None
 
   
 let _measure_wp_goal (x : string) (pre: terms) (post: terms) (m_opt: terms) (q: terms) : terms option =
@@ -421,7 +578,7 @@ let _measure_sample_trace_goal (wfctx: wf_ctx) (preproj: terms) (m_opt: terms) (
     end
   | _ -> None
 
-let _measure_sample_proj_goal (x : string) (y : string) (preproj: terms) (postproj: terms) (m_opt: terms) (q: terms) (switch: bool) : terms option =
+let _measure_sample_entailment_goal (x : string) (y : string) (preproj: terms) (preobs: terms) (postproj: terms) (postobs: terms) (m_opt: terms) (q: terms) (switch: bool) : terms option =
   let get_subst bi x y j fj =
     let s = [
       (x, j);
@@ -464,9 +621,34 @@ let _measure_sample_proj_goal (x : string) (y : string) (preproj: terms) (postpr
           end
         | _ -> None
       in
+      let rhs_obs = 
+        let template = parse_terms "Mi^D_(q, q) @ bsubst @ Mi_(q, q)" in
+
+        let fj = _bijection_mapping switch (Symbol _false) in
+        let s0 = [
+          ("bsubst", get_subst postobs x y (Symbol _false) fj);
+          ("Mi", m0);
+          ("q", q);
+        ] in
+        let term0 = apply_subst_unique_var s0 template in
+
+        let fj = _bijection_mapping switch (Symbol _true) in
+        let s1 = [
+          ("bsubst", get_subst postobs x y (Symbol _true) fj);
+          ("Mi", m1);
+          ("q", q);
+        ] in
+        let term1 = apply_subst_unique_var s1 template in
+        Fun {head=_plus; args=[term0; term1]}
+
+      in
       match aux_i postproj with
-      | Some rhs ->
-        Some (Fun {head = _entailment; args = [preproj; rhs]})
+      | Some rhs_proj ->
+        Some (Fun {head = _entailment; 
+          args = [
+            Fun {head=_vbar; args=[rhs_proj; rhs_obs;]};
+            Fun {head=_vbar; args=[preproj; preobs;]}; 
+        ]})
       | None -> None
     end
   | _ -> None

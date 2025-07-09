@@ -101,6 +101,8 @@ and tactic2str (t: tactic) : string =
         "dirac."
     | SIMPL_ENTAIL        -> 
         "simpl_entail."
+    | STRONG_ENTAIL       ->
+        "srong_entail."
     | ENTAIL_TRANS e      -> 
         Printf.sprintf "entail_trans %s." (term2str e)
     | CYLINDER_EXT e      -> 

@@ -627,6 +627,8 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           match type_t1, type_t2 with
           | Fun {head=head1; _}, _ when head1 = _otype && type_t1 = type_t2 ->
             Type type_t1
+          | Fun {head=head1; _}, _ when head1 = _dtype && type_t1 = type_t2 ->
+            Type type_t1
           | _ -> TypeError (Printf.sprintf "%s typing failed." (term2str s))
         end
       | _ -> TypeError (Printf.sprintf "%s typing failed. %s and %s are not typed as QVList." (term2str s) (term2str t1) (term2str t2))
@@ -783,14 +785,15 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           (* otype projector conjunction *)
           | Fun {head=head1; _}, _ when head1 = _otype && type_t1 = type_t2 ->
             (* check projection *)
-            begin match type_is_projector wfctx t1, type_is_projector wfctx t2 with
+            (* begin match type_is_projector wfctx t1, type_is_projector wfctx t2 with
             | None, None ->
               Type type_t1
             | None, Some msg2 ->
               TypeError (Printf.sprintf "%s typing failed. %s is not a valid projector. %s" (term2str s) (term2str t2) msg2)
             | Some msg1, _ ->
               TypeError (Printf.sprintf "%s typing failed. %s is not a valid projector. %s" (term2str s) (term2str t1) msg1)
-            end 
+            end  *)
+            Type type_t1
 
           (* dtype projector conjunction *)
           | Fun {head=head1; args=[Fun{args=s1; _}; Fun{args=s2; _}]},
@@ -817,7 +820,11 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
       match calc_type wfctx t1, calc_type wfctx t2 with
       | Type type_t1, Type type_t2 ->
         begin
-          if type_t1 = Fun {head=_cterm; args=[Symbol _bit]} && type_t2 = type_t1 then
+          (* boolen disjunction *)
+          if (type_t1 = Fun {head=_cterm; args=[Symbol _bit]} 
+            || type_t1 = Fun {head=_cvar; args=[Symbol _bit]}) 
+            && (type_t2 = Fun {head=_cterm; args=[Symbol _bit]} 
+            || type_t2 = Fun {head=_cvar; args=[Symbol _bit]}) then
             Type (Fun {head=_cterm; args=[Symbol _bit]})
           else match type_t1, type_t2 with
 
@@ -968,14 +975,20 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
   (* Eq *)
   | Fun {head; args=[t1; t2]} when head = _eq ->
     begin
-      match calc_type wfctx t1 with
-      | Type type_t1 ->
-        begin
-          match type_check wfctx t2 type_t1 with
-          | Type _ -> Type (Symbol _type)
-          | TypeError _ -> TypeError (Printf.sprintf "%s typing failed. Two sides don't have the same type." (term2str s))
-        end
-      | TypeError msg -> TypeError (Printf.sprintf "%s typing failed. %s is not well typed. %s" (term2str s) (term2str t1) msg)
+      let try_t1_t2 t1 t2 =
+        match calc_type wfctx t1 with
+        | Type type_t1 ->
+          begin
+            match type_check wfctx t2 type_t1 with
+            | Type _ -> Type (Symbol _type)
+            | TypeError _ -> TypeError (Printf.sprintf "%s typing failed. Two sides don't have the same type." (term2str s))
+          end
+        | TypeError msg -> TypeError (Printf.sprintf "%s typing failed. %s is not well typed. %s" (term2str s) (term2str t1) msg)
+      in
+      match try_t1_t2 t1 t2, try_t1_t2 t2 t1 with
+      | Type type_t1, _ -> Type type_t1
+      | _, Type type_t2 -> Type type_t2
+      | TypeError msg1, TypeError msg2 -> TypeError (msg1 ^ "\n" ^ msg2)
     end
 
   (* inspace *)

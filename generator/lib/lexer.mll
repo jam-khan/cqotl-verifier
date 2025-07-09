@@ -110,6 +110,7 @@ rule token = parse
     | "cq_entail"                   { CQ_ENTAIL }
     | "dirac"                       { DIRAC }
     | "simpl_entail"                { SIMPL_ENTAIL }
+    | "strong_entail"               { STRONG_ENTAIL }
     | "entail_trans"                { ENTAIL_TRANS }
     | "cylinder_ext"                { CYLINDER_EXT }
 

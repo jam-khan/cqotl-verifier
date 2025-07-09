@@ -49,6 +49,7 @@ and tactic =
   | CQ_ENTAIL
   | DIRAC
   | SIMPL_ENTAIL
+  | STRONG_ENTAIL
   | ENTAIL_TRANS of terms
   | CYLINDER_EXT of terms
   [@@deriving show]

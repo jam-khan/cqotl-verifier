@@ -152,9 +152,12 @@ Prove RandomWalkProof :
             intro Hyp. dirac. by_lean.
             intro Hyp. dirac. by_lean.
 
+        simpl_entail. split.
         cq_entail. split.
             simpl. intro Hyp. rewrite Hyp. simpl. dirac. simpl_entail. refl.
             simpl. intro Hyp. rewrite Hyp. simpl. dirac. simpl_entail. refl.
+
+        dirac. simpl_entail. refl.
 
     r_pre (((~ (((lt @ i) @ m) /\ (((x == x') /\ (i == i')) /\ (b == b') /\ (iadd @ x @ b == iadd @ x' @ b')))) -> 0O[bit, bit]_(q, q)) | 0O[bit, bit]_(q, q)).
 

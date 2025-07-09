@@ -428,6 +428,7 @@ and eval_tactic (p: prover) (tac : tactic) : eval_result =
           | CQ_ENTAIL         -> eval_tac_CQ_ENTAIL proof_f
           | DIRAC             -> eval_tac_DIRAC proof_f
           | SIMPL_ENTAIL      -> eval_tac_SIMPL_ENTAIL proof_f
+          | STRONG_ENTAIL     -> eval_tac_STRONG_ENTAIL proof_f
           | ENTAIL_TRANS e    -> eval_tac_ENTAIL_TRANS proof_f e
           | CYLINDER_EXT qs   -> eval_tac_CYLINDER_EXT proof_f qs
         end in 
@@ -1463,27 +1464,22 @@ and eval_tac_R_MEAS_SAMPLE (f: proof_frame) (switch: bool): tactic_result =
   | (ctx, hd) :: tl ->
       let wfctx = get_pf_wfctx f in
       (* Check the application condition *)
-      let is_zeroo t =
-        match t with
-        | Fun {head; args=[Fun{head=head_o; _}; _]} when head = _subscript && head_o = _zeroo -> true
-        | _ -> false
-      in
       match hd with
       | Fun {head=head; args=[
-          Fun {head=head_pre; args=[phi; zero_pre]}; 
+          Fun {head=head_pre; args=[phi; preobs]}; 
           Fun {head=head_s1; args=[Fun {head=head_meas; args=[Symbol x1; m_opt; qs]}]}; 
           Fun {head=head_s2; args=[Fun {head=head_sample; args=[Symbol x2; mu]}]}; 
-          Fun {head=head_post; args=[psi; zero_post]};]} when 
+          Fun {head=head_post; args=[psi; postobs]};]} when 
         (
           head = _judgement && 
-          head_pre = _vbar && (is_zeroo zero_pre) &&
+          head_pre = _vbar &&
           head_s1 = _seq && head_meas = _meas &&
           head_s2 = _seq && head_sample = _passign &&
-          head_post = _vbar && (is_zeroo zero_post)
+          head_post = _vbar 
         ) ->
         let goal_vee_bj = _measure_sample_or_bj phi in
         let goal_trace = _measure_sample_trace_goal wfctx phi m_opt qs mu switch in
-        let goal_proj = _measure_sample_proj_goal x1 x2 phi psi m_opt qs switch in
+        let goal_proj = _measure_sample_entailment_goal x1 x2 phi preobs psi postobs m_opt qs switch in
         begin
           match goal_vee_bj, goal_trace, goal_proj with
           | Some goal_vee_bj, Some goal_trace, Some goal_proj -> 
@@ -1596,6 +1592,25 @@ and eval_tac_SIMPL_ENTAIL (f: proof_frame) : tactic_result =
       rocq_goals  = f.rocq_goals;
     } in
     Success (ProofFrame new_frame)
+
+and eval_tac_STRONG_ENTAIL (f: proof_frame) : tactic_result =
+  (* check the uniqueness of the quantum variable list qs *)
+  match f.goals with
+  | [] -> TacticError "Nothing to prove."
+  | (ctx, hd) :: tl ->
+    match strong_entail (get_pf_wfctx f) hd with
+    | Some new_goal ->
+      let new_frame = {
+        env         = f.env;
+        proof_name  = f.proof_name;
+        proof_prop  = f.proof_prop;
+        goals       = (ctx, new_goal) :: tl;
+        lean_goals  = f.lean_goals;
+        rocq_goals  = f.rocq_goals;
+      } in
+      Success (ProofFrame new_frame)
+    | _ -> 
+      TacticError (Printf.sprintf "The tactic cannot be applied here")
 
 and eval_tac_ENTAIL_TRANS (f: proof_frame) (e: terms): tactic_result =
   match f.goals with
