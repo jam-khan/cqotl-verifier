@@ -8,8 +8,6 @@ import Mathlib.Analysis.InnerProductSpace.Projection
 import Mathlib.Analysis.InnerProductSpace.Spectrum
 import Mathlib.LinearAlgebra.Trace
 
-import LeanVeri.Sum
-
 open scoped ComplexOrder
 
 /-!
@@ -170,6 +168,7 @@ The proof works be decomposing `x` in the eigenbasis of `T`.
 -/
 lemma IsPositive.re_inner_app_eq_zero_iff_app_eq_zero {T : E →ₗ[𝕜] E} (hT : T.IsPositive) (x : E) :
     RCLike.re (inner 𝕜 (T x) x) = 0 ↔ T x = 0 := by
+  -- Maybe there is a simple more abstract proof
   have hTsymm : T.IsSymmetric := hT.isSymmetric
   let n : ℕ := Module.finrank 𝕜 E
   have hn : Module.finrank 𝕜 E = n := rfl
@@ -192,45 +191,19 @@ lemma IsPositive.re_inner_app_eq_zero_iff_app_eq_zero {T : E →ₗ[𝕜] E} (hT
           intro j
           rw [hTsymm.apply_eigenvectorBasis, InnerProductSpace.smul_left, InnerProductSpace.smul_left, inner_smul_right_eq_smul]
           rfl
-      _ = ∑ ij : Fin n × Fin n, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * (base.repr x ij.1 * inner 𝕜 (base ij.2) (base ij.1)))
-        ) := by rw [← Fintype.sum_prod_type']
-      _ = ∑ ij ∈ diag, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * (base.repr x ij.1 * inner 𝕜 (base ij.2) (base ij.1)))
-        ) + ∑ ij ∈ diagᶜ, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * (base.repr x ij.1 * inner 𝕜 (base ij.2) (base ij.1)))
-        ) := by rw [Finset.sum_add_sum_compl diag]
-      _ = ∑ ij ∈ diag, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * base.repr x ij.1)
-        ) + ∑ ij ∈ diagᶜ, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * (base.repr x ij.1 * inner 𝕜 (base ij.2) (base ij.1)))
+      _ = ∑ i, RCLike.re (starRingEnd 𝕜 (base.repr x i) *
+          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn i) * (base.repr x i * inner 𝕜 (base i) (base i)))
         ) := by
-          have hdiag : ∀ij ∈ diag, inner 𝕜 (base ij.2) (base ij.1) = 1 := by
-            intro ij hij
-            unfold diag at hij
-            simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
-            rw [hij]
-            have hnorm : ‖base ij.2‖ = 1 := base.norm_eq_one ij.2
-            exact (inner_eq_one_iff_of_norm_one hnorm hnorm).mpr rfl
-          simp +contextual [hdiag]
-      _ = ∑ ij ∈ diag, RCLike.re (starRingEnd 𝕜 (base.repr x ij.2) *
-          (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn ij.2) * base.repr x ij.1)
-        ) := by
-          have hdiagc : ∀ij ∈ diagᶜ, inner 𝕜 (base ij.2) (base ij.1) = 0 := by
-            intro ij hij
-            unfold diag at hij
-            simp at hij
-            exact base.inner_eq_zero fun heq ↦ hij (heq.symm)
-          simp +contextual [hdiagc]
+          have hij : ∀i, ∀j, j ≠ i → RCLike.re (starRingEnd 𝕜 (base.repr x j) *
+            (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn j) * (base.repr x i * inner 𝕜 (base j) (base i))))= 0 := by
+            intro i j hnij
+            simp [base.inner_eq_zero hnij]
+          have hi := fun i ↦ Fintype.sum_eq_single i (hij i)
+          simp +contextual only [hi]
       _ = ∑ i, RCLike.re (starRingEnd 𝕜 (base.repr x i) *
           (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn i) * base.repr x i)
-        ) := by
-          let f : Fin n → Fin n → ℝ := fun i j ↦
-            RCLike.re (starRingEnd 𝕜 (base.repr x j) * (starRingEnd 𝕜 ↑(hTsymm.eigenvalues hn j) * base.repr x i))
-          unfold diag
-          apply sum_diag_eq n f
-      _ = ∑ i, RCLike.re (starRingEnd 𝕜 (base.repr x i) * base.repr x i *
-          ↑(hTsymm.eigenvalues hn i)
+        ) := by simp +contextual [base.inner_eq_one]
+      _ = ∑ i, RCLike.re (starRingEnd 𝕜 (base.repr x i) * base.repr x i * ↑(hTsymm.eigenvalues hn i)
         ) := by
           apply Fintype.sum_congr _ _
           intro i
@@ -238,7 +211,7 @@ lemma IsPositive.re_inner_app_eq_zero_iff_app_eq_zero {T : E →ₗ[𝕜] E} (hT
           ring_nf
       _ = ∑ i, RCLike.re ((‖base.repr x i‖ : 𝕜)^2 * ↑(hTsymm.eigenvalues hn i)) := by
           simp +contextual [RCLike.conj_mul]
-      _ = ∑ i, (‖base.repr x i‖^2 * hTsymm.eigenvalues hn i) := by
+      _ = ∑ i, ‖base.repr x i‖^2 * hTsymm.eigenvalues hn i := by
           apply Fintype.sum_congr _ _
           intro i
           rw [← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]

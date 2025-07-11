@@ -8,4 +8,3 @@ import LeanVeri.Projection
 import LeanVeri.ProjectionSubmodule
 import LeanVeri.Properties
 import LeanVeri.Spectrum
-import LeanVeri.Sum
