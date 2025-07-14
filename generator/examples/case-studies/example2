@@ -76,9 +76,7 @@ Prove Pf2 :
     forall (U : OType[bit, bit]),
     forall (HU : UOpt[U]),
 
-    {true -> (
-        (|(false, false)>@<(false, false)| \/ |(true, true)>@<(true, true)|)_((q1, q1'), (q1, q1')) 
-        /\ Psym2_((q2, q2'), (q2, q2'))) | 0O[bit]_(q1, q1)}
+    {true -> Psym2_((q2, q2'), (q2, q2')) | 0O[bit]_(q1, q1)}
 
         unitary ((|false> @ <false|) * 1O[bit] + (|true> @ <true|) * U) (q1, q2);
         x := meas (P0, P1) q1;
@@ -103,7 +101,7 @@ Prove Pf2 :
     r_seq -1 -1 (~(x == x') -> 0O[bit]_(q1, q1) /\ ((x == x') -> Psym2_((q2, q2'), (q2, q2')))) | 0O[bit]_(q1, q1).
 
     choose 2.
-    
+    (* Pause. *)
     r_meas_meas id.
 
     simpl. refl.
@@ -139,11 +137,14 @@ Prove Pf2 :
 
     r_seq 2 -1 (~(x == x') -> 0O[bit]_(q1, q1) 
                 /\ ((x == false /\ x' == false) -> Psym2_((q2, q2'), (q2, q2'))) 
-                /\ ((x == true /\ x' == true) -> U_(q2, q2) @ Psym2_((q2, q2'), (q2, q2')) @ U^D_(q2, q2))) | 0O[bit]_(q1, q1).
+                /\ ((x == true /\ x' == true) -> U^D_(q2', q2') @ Psym2_((q2, q2'), (q2, q2')) @ U_(q2', q2'))) | 0O[bit]_(q1, q1).
 
     choose 2.
 
+    (* Pause. *)
     r_if q1.
+
+        (* Pause. *)
         r_unitary. dirac. simpl_entail. split.
             cq_entail. simpl. split.
                 intro H. rewrite H. simpl. dirac. simpl_entail. refl.
@@ -151,7 +152,7 @@ Prove Pf2 :
                     case x. 
                         rewrite CASE0. simpl. dirac. cylinder_ext (q2, q2'). dirac. simpl_entail. 
                         (* backend *)
-                        by_rocq.
+                        refl.
 
                         rewrite CASE1. simpl. dirac. simpl_entail. refl.
 
@@ -192,13 +193,13 @@ Prove Pf2 :
     rwrule 0O[bit, bit]_(q1, q1) @ A --> 0O[bit, bit]_(q1, q1).
 
     simpl_entail. refl.
-    (* Pause. *)
+    
     r_meas_meas id. refl.
 
     simpl. split.
         intro H.
         (* crazy obligation *)
-        (* Pause. *)
+        (* Pause *)
         by_rocq.
 
         intro H.
