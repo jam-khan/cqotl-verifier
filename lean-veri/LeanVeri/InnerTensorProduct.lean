@@ -187,4 +187,22 @@ noncomputable instance : NormedAddCommGroup (E ⊗[𝕜] F) :=
 
 noncomputable instance : InnerProductSpace 𝕜 (E ⊗[𝕜] F) := InnerProductSpace.ofCore (InnerProductSpace_Core_TensorProduct 𝕜)
 
+lemma inner_tmul (x₀ x₁ : E) (y₀ y₁ : F) :
+    inner 𝕜 (x₀ ⊗ₜ[𝕜] y₀) (x₁ ⊗ₜ[𝕜] y₁) = inner 𝕜 x₀ x₁ * inner 𝕜 y₀ y₁ :=
+  rfl
+
+variable {G H : Type*}
+
+variable [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+variable [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+variable [FiniteDimensional 𝕜 G] [FiniteDimensional 𝕜 H]
+
+lemma outerProduct_tmul (x : E) (y : F) (z : G) (w : H) :
+    outerProduct 𝕜 (x ⊗ₜ[𝕜] y) (z ⊗ₜ[𝕜] w) = mapBilinear 𝕜 G H E F (outerProduct 𝕜 x z) (outerProduct 𝕜 y w) := by
+  ext u v
+  simp only [AlgebraTensorModule.curry_apply, curry_apply, LinearMap.coe_restrictScalars, outerProduct_def,
+    mapBilinear_apply, map_tmul, tmul_smul]
+  rw [inner_tmul, ← smul_tmul', smul_smul, mul_comm]
+
 end TensorProduct
+
