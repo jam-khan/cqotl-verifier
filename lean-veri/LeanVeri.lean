@@ -1,6 +1,6 @@
 import LeanVeri.Commons
 import LeanVeri.CommonsTensor
-import LeanVeri.InnerTensorProductEuclideanSpace
+import LeanVeri.InnerTensorProduct
 import LeanVeri.LinearMapPropositions
 import LeanVeri.OuterProduct
 import LeanVeri.PartialTrace
@@ -8,3 +8,4 @@ import LeanVeri.Projection
 import LeanVeri.ProjectionSubmodule
 import LeanVeri.Properties
 import LeanVeri.Spectrum
+import LeanVeri.TensorProduct
