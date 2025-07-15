@@ -1,5 +1,5 @@
 import LeanVeri.Commons
-import LeanVeri.InnerTensorProductEuclideanSpace
+import LeanVeri.InnerTensorProduct
 
 open scoped TensorProduct
 
