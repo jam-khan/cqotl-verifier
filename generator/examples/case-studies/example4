@@ -80,7 +80,7 @@ Prove Pf4 :
 
         ~
         init q';
-        unitary X q;
+        unitary X q';
     { true -> Psym2_((q, q'), (q, q')) | 0O[bit]_(q, q) }.
 
     intro x. intro q. intro q'.
@@ -92,7 +92,7 @@ Prove Pf4 :
             (* backend *) sorry. 
             (* by_lean. *)
         rewrite CASE1. simpl. dirac. simpl_entail. refl.
-    
+    (* Pause. *)
     (* unitary X q'; *)
     r_seq 4 -1 (~ (x == true) -> 0O[bit]_(q, q)) /\ (x == true -> (|(true, false)> @ <(true, false)|)_((q, q'), (q, q'))) | 0O[bit]_(q, q).
 
@@ -100,17 +100,20 @@ Prove Pf4 :
 
     r_unitary.
 
-    dirac. simpl_entail. simpl.
+    dirac. simpl_entail. simpl. split.
     cq_entail. simpl. split.
         intro H. rewrite H0. simpl. dirac.
 
         rewrite Lemma2 @ (x == true) @ H0. simpl. dirac. 
         simpl_entail. refl.
 
-        intro H. rewrite H0. simpl. dirac.
+        intro H. rewrite H0. simpl. dirac. 
         cylinder_ext (q, q'). dirac. simpl_entail. 
-        (* backend *) sorry.
+        (* backend *) 
+            sorry.
         (* by_lean. *)
+
+        cylinder_ext (q, q'). dirac. simpl_entail. refl.
 
     (* init q'; *)
     r_seq 4 -1 (~ (x == true) -> 0O[bit]_(q, q)) /\ (x == true -> (|true> @ <true|)_(q, q)) | 0O[bit]_(q, q).
