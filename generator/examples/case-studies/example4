@@ -175,19 +175,14 @@ Prove Pf4 :
         r_meas.
 
             simpl. simpl_entail. split.
-                cq_entail. simpl. split. split.
+                cq_entail. simpl. split.
                     intro H. dirac. case x.
                         rewrite CASE0. simpl. dirac. simpl_entail. refl.
-                        rewrite CASE1. simpl. dirac. simpl_entail. expand P0. dirac. simpl_entail. refl.
-                    intro H. destruct H0.
-                    split.
-                    intro H. destruct H0.
-                    intro H. dirac. case x.
-                        rewrite CASE0. simpl. dirac. simpl_entail. refl.
-                        rewrite CASE1. simpl. dirac. simpl_entail. expand P1. dirac. simpl_entail. refl.
+                        rewrite CASE1. simpl. dirac. simpl_entail. expand P0. dirac. simpl_entail. 
+                        by_lean.
 
+                    
+                    intro H. destruct H0.
                     dirac. simpl_entail. refl.
-
-    Pause. 
 
 QED.
