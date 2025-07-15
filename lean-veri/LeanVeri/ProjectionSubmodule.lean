@@ -22,6 +22,9 @@ def LinearMap.toSubmodule (T : E →ₗ[𝕜] E) : Submodule 𝕜 E := (LinearMa
 
 namespace Submodule
 
+/-- Sasaki implication. -/
+def SasakiImp (K₀ K₁ : Submodule 𝕜 E) : Submodule 𝕜 E := K₀ᗮ ⊔ (K₀ ⊓ K₁)
+
 /-- The projection corresponding to a `Submodule` as a `LinearMap` -/
 noncomputable def toProjection (K : Submodule 𝕜 E) : E →ₗ[𝕜] E :=
   K.subtype ∘ₗ K.orthogonalProjection
@@ -172,6 +175,10 @@ noncomputable def SubmoduleInf (T N : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
 /-- The projection corresponding to the sum of the submodules of the given linear maps. -/
 noncomputable def SubmoduleSup (T N : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
   (T.toSubmodule ⊔ N.toSubmodule).toProjection
+
+/-- Sasaki implication for linear maps -/
+noncomputable def SasakiImp (T N : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
+  (T.toSubmodule.SasakiImp N.toSubmodule).toProjection
 
 lemma isProjection.SubmoduleComplement_eq {T : E →ₗ[𝕜] E} (hT : T.isProjection) : T.SubmoduleComplement = 1 - T := by
   ext x
