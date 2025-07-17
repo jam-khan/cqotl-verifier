@@ -58,6 +58,10 @@ def isProjection (T : E →ₗ[𝕜] E) : Prop :=
 def isPureState (T : E →ₗ[𝕜] E) : Prop :=
   T.isDensityOperator ∧ T.rank = 1
 
+/-- A pair of projection that covers the full space -/
+def areProjMeas (T S : E →ₗ[𝕜] E) : Prop :=
+  T.isProjection ∧ S.isProjection ∧ T + S = 1
+
 omit [CompleteSpace E]
 
 lemma isProjection.zero : (0 : E →ₗ[𝕜] E).isProjection := And.intro isPositive_zero rfl
