@@ -80,8 +80,24 @@ noncomputable def ket0braM : 𝕜² →ₗ[𝕜] 𝕜² :=
 noncomputable def ket1braM : 𝕜² →ₗ[𝕜] 𝕜² :=
   outerProduct 𝕜 ket1 ketM
 
+/-- Ket plus times bra zero, usually denoted as |+⟩⟨0|. -/
+noncomputable def ketPbra0 : 𝕜² →ₗ[𝕜] 𝕜² :=
+  outerProduct 𝕜 ketP ket0
+
+/-- Ket plus times bra one, usually denoted as |+⟩⟨1|. -/
+noncomputable def ketPbra1 : 𝕜² →ₗ[𝕜] 𝕜² :=
+  outerProduct 𝕜 ketP ket1
+
+/-- Ket minus times bra zero, usually denoted as |-⟩⟨0|. -/
+noncomputable def ketMbra0 : 𝕜² →ₗ[𝕜] 𝕜² :=
+  outerProduct 𝕜 ketM ket0
+
+/-- Ket minus times bra one, usually denoted as |-⟩⟨1|. -/
+noncomputable def ketMbra1 : 𝕜² →ₗ[𝕜] 𝕜² :=
+  outerProduct 𝕜 ketM ket1
+
 /-- Hadamard gate, usually denoted as H. -/
-noncomputable def Hadamard : 𝕜² →ₗ[𝕜] 𝕜² := outerProduct 𝕜 ket0 ketP + outerProduct 𝕜 ket1 ketM
+noncomputable def Hadamard : 𝕜² →ₗ[𝕜] 𝕜² := ket0braP + ket1braM
 
 noncomputable def PauliX : 𝕜² →ₗ[𝕜] 𝕜² := ket0bra1 + ket1bra0
 
@@ -253,6 +269,23 @@ lemma inner_ketM_ketP : inner 𝕜 (ketM : 𝕜²) ketP = 0 :=
 lemma inner_ketP_ketM : @inner 𝕜 𝕜² _ ketP ketM = 0 :=
   inner_eq_zero_symm.mp inner_ketM_ketP
 
+lemma adjoint_ketbra0 : ketbra0.adjoint = ketbra0 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket0 ket0
+lemma adjoint_ket0bra1 : ket0bra1.adjoint = ket1bra0 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket0 ket1
+lemma adjoint_ket1bra0 : ket1bra0.adjoint = ket0bra1 (𝕜 := 𝕜) := adjoint_outerProduct  𝕜 ket1 ket0
+lemma adjoint_ketbra1 : ketbra1.adjoint = ketbra1 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket1 ket1
+lemma adjoint_ketbraP : ketbraP.adjoint = ketbraP (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketP ketP
+lemma adjoint_ketbraM : ketbraM.adjoint = ketbraM (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketM ketM
+lemma adjoint_ketPbraM : ketPbraM.adjoint = ketMbraP (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketP ketM
+lemma adjoint_ketMbraP : ketMbraP.adjoint = ketPbraM (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketM ketP
+lemma adjoint_ket0braP : ket0braP.adjoint = ketPbra0 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket0 ketP
+lemma adjoint_ket1braP : ket1braP.adjoint = ketPbra1 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket1 ketP
+lemma adjoint_ket0braM : ket0braM.adjoint = ketMbra0 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket0 ketM
+lemma adjoint_ket1braM : ket1braM.adjoint = ketMbra1 (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ket1 ketM
+lemma adjoint_ketPbra0 : ketPbra0.adjoint = ket0braP (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketP ket0
+lemma adjoint_ketPbra1 : ketPbra1.adjoint = ket1braP (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketP ket1
+lemma adjoint_ketMbra0 : ketMbra0.adjoint = ket0braM (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketM ket0
+lemma adjoint_ketMbra1 : ketMbra1.adjoint = ket1braM (𝕜 := 𝕜) := adjoint_outerProduct 𝕜 ketM ket1
+
 lemma ket0_eq_ketP_add_ketM : (ket0 : 𝕜²) = (1/√2 : 𝕜) • (ketP + ketM) := by
   unfold ketM ketP
   rw [← smul_add, add_add_sub_cancel, smul_smul,
@@ -280,6 +313,10 @@ lemma ketbra0_add_ketbra1_eq : ketbra0 + ketbra1 = (1 : 𝕜² →ₗ[𝕜] 𝕜
   fin_cases i
   · simp only [Fin.isValue, Fin.zero_eta, Matrix.cons_val_zero, mul_one, mul_zero, add_zero]
   · simp only [Fin.isValue, Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_fin_one, mul_zero, mul_one, zero_add]
+
+lemma ketbra1_add_ketbra0_eq : ketbra1 + ketbra0 = (1 : 𝕜² →ₗ[𝕜] 𝕜²) := by
+  rw [add_comm]
+  exact ketbra0_add_ketbra1_eq
 
 lemma ketbra0_eq : ketbra0 = (1/2 : 𝕜) • ketbraP + (1/2 : 𝕜) • (ketPbraM : 𝕜² →ₗ[𝕜] 𝕜²) + (1/2 : 𝕜) •  ketMbraP + (1/2 : 𝕜) • ketbraM :=
   calc
@@ -377,21 +414,40 @@ lemma ketbraM_eq : ketbraM = (1/2 : 𝕜) • ketbra0 - (1/2 : 𝕜) • (ket0br
       rw [← ketbra0, ← ket1bra0, ← ket0bra1, ← ketbra1]
       abel
 
-lemma ketbraP_eq_one_sub_ketbraM :
-  ketbraP = (1 : 𝕜² →ₗ[𝕜] 𝕜²) - ketbraM := by
-    rw [eq_sub_iff_add_eq]
-    rw [ketbraP_eq, ketbraM_eq]
-    simp only [smul_add]
-    abel_nf
-    repeat rw [← smul_assoc]
-    repeat rw [one_div]
-    simp only [zsmul_eq_mul, Int.cast_ofNat, isUnit_iff_ne_zero, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, IsUnit.mul_inv_cancel, one_smul]
-    apply ketbra0_add_ketbra1_eq
+lemma ketbraP_eq_one_sub_ketbraM : ketbraP = (1 : 𝕜² →ₗ[𝕜] 𝕜²) - ketbraM := by
+  rw [eq_sub_iff_add_eq]
+  rw [ketbraP_eq, ketbraM_eq]
+  simp only [smul_add]
+  abel_nf
+  repeat rw [← smul_assoc]
+  repeat rw [one_div]
+  simp only [zsmul_eq_mul, Int.cast_ofNat, isUnit_iff_ne_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, IsUnit.mul_inv_cancel, one_smul]
+  apply ketbra0_add_ketbra1_eq
 
 lemma ketbraP_add_ketbraM_eq : ketbraP + ketbraM = (1 : 𝕜² →ₗ[𝕜] 𝕜²)  := by
   rw [← @eq_sub_iff_add_eq]
   apply ketbraP_eq_one_sub_ketbraM
+
+lemma ket1bra0_comp_ket1bra0_eq : ket1bra0 ∘ₗ ket1bra0 = (0 : 𝕜² →ₗ[𝕜] 𝕜²) := by
+  unfold ket1bra0
+  rw [outerProduct_comp_outerProduct_eq_inner_smul_outerProduct, inner_ket0_ket1]
+  simp
+
+lemma ket0bra1_comp_ket0bra1_eq : ket0bra1 ∘ₗ ket0bra1 = (0 : 𝕜² →ₗ[𝕜] 𝕜²) := by
+  unfold ket0bra1
+  rw [outerProduct_comp_outerProduct_eq_inner_smul_outerProduct, inner_ket1_ket0]
+  simp
+
+lemma ket1bra0_comp_ket0bra1_eq : ket1bra0 ∘ₗ ket0bra1 = (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) := by
+  unfold ket1bra0 ket0bra1 ketbra1
+  rw [outerProduct_comp_outerProduct_eq_inner_smul_outerProduct, inner_ket0_ket0]
+  simp
+
+lemma ket0bra1_comp_ket1bra0_eq : ket0bra1 ∘ₗ ket1bra0 = (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜²) := by
+  unfold ket0bra1 ket1bra0 ketbra0
+  rw [outerProduct_comp_outerProduct_eq_inner_smul_outerProduct, inner_ket1_ket1]
+  simp
 
 lemma ketbraP_ket0_eq : (ketbraP ket0 : 𝕜²) = (1 / √2 : 𝕜) • ketP := by
   unfold ketbraP
@@ -418,18 +474,18 @@ lemma ketbra1_ketP_eq : (ketbra1 ketP : 𝕜²) = (1 / √2 : 𝕜) • ket1 := 
   rw [inner_ket1_ketP]
 
 lemma hadamard_ketP_eq : Hadamard ketP = (ket0 : 𝕜²) := by
-  unfold Hadamard
+  unfold Hadamard ket0braP ket1braM
   rw [LinearMap.add_apply, outerProduct_def, outerProduct_def, inner_ketP_ketP, inner_ketM_ketP]
   simp
 
 lemma adj_Hadamard_eq : Hadamard.adjoint = outerProduct 𝕜 ketP ket0 + outerProduct 𝕜 ketM ket1 := by
-  unfold Hadamard
+  unfold Hadamard ket0braP ket1braM
   simp [adjoint_outerProduct]
 
-lemma adj_Hadamard_ketbraP_eq :
+lemma adj_Hadamard_ketbraP_eq' :
     Hadamard.adjoint * (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) * Hadamard = ketbra0 := by
   rw [adj_Hadamard_eq, Hadamard]
-  unfold ketbraP
+  unfold ket0braP ket1braM ketbraP
   rw [left_distrib]
   repeat rw [right_distrib]
   repeat rw [outerProduct_mul_outerProduct_eq_inner_smul_outerProduct]
@@ -440,6 +496,73 @@ lemma adj_Hadamard_ketbraP_eq :
   repeat rw [show (1/√2 : 𝕜) * (1/√2 : 𝕜) = 1 / 2 by field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]]
   rw [← ketbraP, ← ketMbraP, ← ketPbraM, ← ketbraM, ketbra0_eq]
   abel
+
+lemma adj_Hadamard_ketbraP_eq :
+    Hadamard.adjoint ∘ₗ (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) ∘ₗ Hadamard = ketbra0 := by
+  rw [← Module.End.mul_eq_comp]
+  exact adj_Hadamard_ketbraP_eq'
+
+lemma isSymmetric_Hadamard : LinearMap.IsSymmetric (Hadamard (𝕜 := 𝕜)) := by
+  intro x y
+  unfold Hadamard
+  repeat rw [LinearMap.add_apply]
+  rw [inner_add_left, inner_add_right]
+  unfold ket0braP ket1braM
+  repeat rw [outerProduct_def]
+  repeat rw [inner_smul_left, inner_smul_right]
+  unfold ketP ketM
+  repeat rw [inner_smul_left]
+  repeat rw [inner_add_left, inner_sub_left]
+  ring_nf
+  repeat rw [map_add, map_sub]
+  repeat rw [(starRingEnd 𝕜).map_mul]
+  repeat rw [RCLike.conj_conj]
+  repeat rw [InnerProductSpace.conj_inner_symm]
+  simp only [one_div, map_inv₀, RCLike.conj_ofReal]
+  ring
+
+lemma isSelfAdjoint_Hadamard : IsSelfAdjoint (Hadamard (𝕜 := 𝕜)) :=
+  (LinearMap.isSymmetric_iff_isSelfAdjoint _).mp isSymmetric_Hadamard
+
+lemma isUnitary_Hadamard : LinearMap.isUnitary (Hadamard (𝕜 := 𝕜)) := by
+  unfold LinearMap.isUnitary LinearMap.isIsometry
+  rw [isSymmetric_Hadamard.adjoint_eq]
+  unfold Hadamard
+  rw [LinearMap.comp_add]
+  repeat rw [LinearMap.add_comp]
+  unfold ket0braP ket1braM
+  repeat rw [outerProduct_comp_outerProduct_eq_inner_smul_outerProduct]
+  rw [inner_ketP_ket0, inner_ketP_ket1, inner_ketM_ket0, inner_ketM_ket1]
+  unfold ketP ketM
+  repeat rw [outerProduct_smul_assoc_right]
+  repeat rw [smul_smul]
+  simp only [one_div, map_inv₀, RCLike.conj_ofReal]
+  field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]
+  repeat rw [outerProduct_add_dist_right, outerProduct_sub_dist_right]
+  repeat rw [smul_add, smul_sub]
+  repeat rw [neg_div]
+  repeat rw [neg_smul]
+  abel_nf
+  repeat rw [two_zsmul]
+  repeat rw [← two_smul 𝕜]
+  repeat rw [smul_smul]
+  simp only [one_div, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, mul_inv_cancel₀, one_smul]
+  rw [← ketbra0, ← ketbra1, ketbra0_add_ketbra1_eq]
+  rfl
+
+lemma isSelfAdjoint_PauliX : IsSelfAdjoint (PauliX (𝕜 := 𝕜)) := by
+  unfold PauliX
+  rw [LinearMap.isSelfAdjoint_iff', map_add, adjoint_ket0bra1, adjoint_ket1bra0, add_comm]
+
+lemma isUnitary_PauliX : LinearMap.isUnitary (PauliX (𝕜 := 𝕜)) := by
+  unfold LinearMap.isUnitary LinearMap.isIsometry
+  rw [LinearMap.isSelfAdjoint_iff'.mp isSelfAdjoint_PauliX]
+  unfold PauliX
+  rw [LinearMap.comp_add]
+  repeat rw [LinearMap.add_comp]
+  simp [ket1bra0_comp_ket1bra0_eq, ket0bra1_comp_ket0bra1_eq, ket1bra0_comp_ket0bra1_eq,
+    ket0bra1_comp_ket1bra0_eq, ketbra1_add_ketbra0_eq]
+  rfl
 
 lemma span_ketP_eq_span_ketM_comp : (𝕜 ∙ ketP : Submodule 𝕜 𝕜²) = (𝕜 ∙ ketM)ᗮ :=
   Submodule.span_singleton_eq_orthogonal_of_inner_eq_zero finrank_euclideanSpace_fin
@@ -579,3 +702,6 @@ lemma trace_ket1braM : ket1braM.trace 𝕜 𝕜² = - (1/√2) := by
   unfold ket1braM
   rw [trace_outerProduct 𝕜 ket1 ketM stOrthonormalBasis]
   exact inner_ketM_ket1
+
+lemma areProjMeas_ketbra0_ketbra1 : LinearMap.areProjMeas (𝕜 := 𝕜) ketbra0 ketbra1 :=
+  ⟨isProjection_ketbra0, isProjection_ketbra1, ketbra0_add_ketbra1_eq⟩
