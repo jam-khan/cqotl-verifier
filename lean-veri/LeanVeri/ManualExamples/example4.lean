@@ -58,7 +58,7 @@ lemma obligation4 :
       (Hadamard.adjoint ∘ₗ ketbraP ∘ₗ ketbraP.adjoint ∘ₗ Hadamard) := by
   rw [(isPositive_ketbraP (𝕜 := 𝕜)).isSymmetric.adjoint_eq]
   nth_rw 2 [← LinearMap.comp_assoc]
-  rw [isProjection_ketbraP.right]
+  rw [LinearMap.IsStarProjection.comp_self (𝕜 := 𝕜) IsStarProjection_ketbraP]
   rw [adj_Hadamard_ketbraP_eq]
 
 lemma obligation5 :

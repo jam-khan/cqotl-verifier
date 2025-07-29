@@ -97,7 +97,7 @@ lemma IsSymmetric.zero_eigenvalues_eq_rank_ker_of_finrank_eq_two (hT : T.IsSymme
     repeat rw [smul_smul] at hx
     have hinner : inner 𝕜 (-((base.repr x 0 * ↑(hT.eigenvalues h2 0)) • (hT.eigenvectorBasis h2) 0))
         ((base.repr x 1 * ↑(hT.eigenvalues h2 1)) • (hT.eigenvectorBasis h2) 1) = 0 := by
-      simp [inner_neg_left, inner_smul_left, inner_smul_right, base.inner_eq_zero Fin.zero_ne_one]
+      simp [inner_neg_left, inner_smul_left, inner_smul_right]
     have h := (eq_iff_eq_zero_of_inner_eq_zero hinner).mp hx
     have h0' := h.left
     have h1' := h.right

@@ -48,7 +48,7 @@ lemma outerProduct_add_dist_right (x : E) (y : F) (z : F) :
 lemma outerProduct_sub_dist_left (x : F) (y : F) (z : E) :
     outerProduct 𝕜 (x - y) z = outerProduct 𝕜 x z - outerProduct 𝕜 y z := by
   ext
-  simp [LinearMap.add_apply]
+  simp only [LinearMap.sub_apply]
   repeat rw [outerProduct_def]
   simp [smul_sub]
 
@@ -56,7 +56,7 @@ lemma outerProduct_sub_dist_left (x : F) (y : F) (z : E) :
 lemma outerProduct_sub_dist_right (x : E) (y : F) (z : F) :
     outerProduct 𝕜 x (y - z) = outerProduct 𝕜 x y - outerProduct 𝕜 x z := by
   ext
-  simp [LinearMap.add_apply]
+  simp only [LinearMap.sub_apply]
   repeat rw [outerProduct_def]
   rw [inner_sub_left, sub_smul]
 
@@ -123,19 +123,21 @@ lemma IsSymmetric_outerProduct_self (x : E) : (outerProduct 𝕜 x x).IsSymmetri
 
 lemma isPositive_outerProduct_self (x : E) :
     (outerProduct 𝕜 x x).IsPositive := by
-  apply And.intro (IsSelfAdjoint_outerProduct_self 𝕜 x)
+  apply And.intro (IsSymmetric_outerProduct_self 𝕜 x)
   intro y
   simp only [outerProduct_def]
   rw [inner_smul_left, InnerProductSpace.conj_inner_symm, inner_mul_symm_re_eq_norm]
   exact norm_nonneg (inner 𝕜 y x * inner 𝕜 x y)
 
-lemma isProjection_outerProduct_self_of_norm_eq_one {x : E} (h : ‖x‖ = 1) :
-    (outerProduct 𝕜 x x).isProjection := by
-  apply And.intro (isPositive_outerProduct_self 𝕜 x)
-  ext y
-  simp only [LinearMap.coe_comp, Function.comp_apply, outerProduct_def]
-  rw [inner_smul_right, inner_self_eq_norm_sq_to_K, h]
-  simp
+lemma IsStarProjection_outerProduct_self_of_norm_eq_one {x : E} (h : ‖x‖ = 1) :
+    IsStarProjection (outerProduct 𝕜 x x) := by
+  constructor
+  · ext y
+    rw [Module.End.mul_eq_comp]
+    simp only [LinearMap.coe_comp, Function.comp_apply, outerProduct_def]
+    rw [inner_smul_right, inner_self_eq_norm_sq_to_K, h]
+    simp
+  · exact IsSelfAdjoint_outerProduct_self 𝕜 x
 
 lemma IsSelfAdjoint_outerProduct_add (x y : E) :
     IsSelfAdjoint (outerProduct 𝕜 x y + outerProduct 𝕜 y x) := by
@@ -149,7 +151,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 omit [DecidableEq ι] in
 lemma sum_outerProduct (f g : ι → E) (x : E) :
     (∑ i, outerProduct 𝕜 (f i) (g i)) x = ∑ i, outerProduct 𝕜 (f i) (g i) x := by
-  simp only [LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.sum_apply]
+  simp only [LinearMap.sum_apply]
 
 omit [DecidableEq ι] in
 lemma sum_outerProduct_OrthonormalBasis (b : OrthonormalBasis ι 𝕜 E) :

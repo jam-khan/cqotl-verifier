@@ -103,11 +103,11 @@ noncomputable def PauliX : 𝕜² →ₗ[𝕜] 𝕜² := ket0bra1 + ket1bra0
 
 lemma ketP_eq : ketP = (!₂[1/√2, 1/√2] : 𝕜²) := by
   unfold ketP ket0 ket1
-  simp [← WithLp.equiv_symm_add, ← WithLp.equiv_symm_smul]
+  simp [← WithLp.toLp_add, ← WithLp.toLp_smul]
 
 lemma ketM_eq : ketM = (!₂[1/√2, -1/√2] : 𝕜²) := by
   unfold ketM ket0 ket1
-  simp only [← WithLp.equiv_symm_sub, ← WithLp.equiv_symm_smul]
+  simp only [← WithLp.toLp_sub, ← WithLp.toLp_smul]
   field_simp
 
 lemma norm_ket0 : norm (ket0 : 𝕜²) = 1 := by
@@ -132,11 +132,11 @@ lemma isSelfAdjoint_ketbra0 : IsSelfAdjoint (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜�
 lemma isSelfAdjoint_ketbra1 : IsSelfAdjoint (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
   IsSelfAdjoint_outerProduct_self 𝕜 ket1
 
-lemma isProjection_ketbraP : LinearMap.isProjection (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  isProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketP
+lemma IsStarProjection_ketbraP : IsStarProjection (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) :=
+  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketP
 
-lemma isProjection_ketbraM : LinearMap.isProjection (ketbraM : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  isProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketM
+lemma IsStarProjection_ketbraM : IsStarProjection (ketbraM : 𝕜² →ₗ[𝕜] 𝕜²) :=
+  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketM
 
 
 lemma inner_ket0_ket0 : inner 𝕜 (ket0 : 𝕜²) ket0 = 1 :=
@@ -147,13 +147,13 @@ lemma inner_ket1_ket1 : inner 𝕜 (ket1 : 𝕜²) ket1 = 1 :=
 
 lemma inner_ket0_ket1 : inner 𝕜 (ket0 : 𝕜²) ket1 = 0 := by
   unfold ket0 ket1
-  simp only [PiLp.inner_apply, WithLp.equiv_symm_pi_apply, RCLike.inner_apply, Fin.sum_univ_two,
+  simp only [PiLp.inner_apply, PiLp.toLp_apply, RCLike.inner_apply, Fin.sum_univ_two,
     Fin.isValue, Matrix.cons_val_zero, map_one, mul_one, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, map_zero, mul_zero, add_zero]
 
 lemma inner_ket1_ket0 : inner 𝕜 (ket1 : 𝕜²) ket0 = 0 := by
   unfold ket1 ket0
-  simp only [PiLp.inner_apply, WithLp.equiv_symm_pi_apply, RCLike.inner_apply, Fin.sum_univ_two,
+  simp only [PiLp.inner_apply, PiLp.toLp_apply, RCLike.inner_apply, Fin.sum_univ_two,
     Fin.isValue, Matrix.cons_val_zero, map_zero, mul_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one, map_one, mul_one, add_zero]
 
@@ -185,11 +185,11 @@ lemma isPositive_ketbra0 : LinearMap.IsPositive (ketbra0 : 𝕜² →ₗ[𝕜] �
 lemma isPositive_ketbra1 : LinearMap.IsPositive (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
   isPositive_outerProduct_self 𝕜 ket1
 
-lemma isProjection_ketbra0 : LinearMap.isProjection (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  isProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket0
+lemma IsStarProjection_ketbra0 : IsStarProjection (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜²) :=
+  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket0
 
-lemma isProjection_ketbra1 : LinearMap.isProjection (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  isProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket1
+lemma IsStarProjection_ketbra1 : IsStarProjection (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
+  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket1
 
 lemma isSelfAdjoint_ketbraP : @IsSelfAdjoint (𝕜² →ₗ[𝕜] 𝕜²) _ ketbraP :=
   IsSelfAdjoint_outerProduct_self 𝕜 ketP
@@ -306,7 +306,7 @@ lemma ketbra0_add_ketbra1_eq : ketbra0 + ketbra1 = (1 : 𝕜² →ₗ[𝕜] 𝕜
   repeat rw [outerProduct_assoc_right]
   simp only [PiLp.inner_apply, RCLike.inner_apply, Fin.sum_univ_two, Fin.isValue]
   unfold ket0 ket1
-  simp only [Fin.isValue, WithLp.equiv_symm_pi_apply, Matrix.cons_val_zero, map_one, mul_one,
+  simp only [Fin.isValue, PiLp.toLp_apply, Matrix.cons_val_zero, map_one, mul_one,
     Matrix.cons_val_one, Matrix.cons_val_fin_one, map_zero, mul_zero, add_zero, zero_add]
   ext i
   simp
@@ -417,7 +417,7 @@ lemma ketbraM_eq : ketbraM = (1/2 : 𝕜) • ketbra0 - (1/2 : 𝕜) • (ket0br
 lemma ketbraP_eq_one_sub_ketbraM : ketbraP = (1 : 𝕜² →ₗ[𝕜] 𝕜²) - ketbraM := by
   rw [eq_sub_iff_add_eq]
   rw [ketbraP_eq, ketbraM_eq]
-  simp only [smul_add]
+  simp only
   abel_nf
   repeat rw [← smul_assoc]
   repeat rw [one_div]
@@ -499,7 +499,8 @@ lemma adj_Hadamard_ketbraP_eq' :
 
 lemma adj_Hadamard_ketbraP_eq :
     Hadamard.adjoint ∘ₗ (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) ∘ₗ Hadamard = ketbra0 := by
-  rw [← Module.End.mul_eq_comp]
+  repeat rw [← Module.End.mul_eq_comp]
+  rw [← mul_assoc]
   exact adj_Hadamard_ketbraP_eq'
 
 lemma isSymmetric_Hadamard : LinearMap.IsSymmetric (Hadamard (𝕜 := 𝕜)) := by
@@ -518,7 +519,7 @@ lemma isSymmetric_Hadamard : LinearMap.IsSymmetric (Hadamard (𝕜 := 𝕜)) := 
   repeat rw [(starRingEnd 𝕜).map_mul]
   repeat rw [RCLike.conj_conj]
   repeat rw [InnerProductSpace.conj_inner_symm]
-  simp only [one_div, map_inv₀, RCLike.conj_ofReal]
+  simp only [map_inv₀, RCLike.conj_ofReal]
   ring
 
 lemma isSelfAdjoint_Hadamard : IsSelfAdjoint (Hadamard (𝕜 := 𝕜)) :=
@@ -618,12 +619,12 @@ lemma Orthonormal_stBasis_val : Orthonormal 𝕜 (E := 𝕜²) stBasis_val := by
     · exact norm_ket1
   · intro i j hij
     fin_cases i <;> fin_cases j <;> simp only [ne_eq, not_true_eq_false] at hij
-    · simp only [stBasis_val, Fin.sum_univ_two, Fin.isValue]
+    · simp only [stBasis_val]
       exact inner_ket0_ket1
-    · simp only [stBasis_val, Fin.sum_univ_two, Fin.isValue]
+    · simp only [stBasis_val]
       exact inner_ket1_ket0
 
-noncomputable def stBasis : Basis (Fin 2) 𝕜 𝕜² :=
+noncomputable def stBasis : Module.Basis (Fin 2) 𝕜 𝕜² :=
   basisOfOrthonormalOfCardEqFinrank Orthonormal_stBasis_val finrank_euclideanSpace_fin.symm
 
 lemma stBasis_eq_stBasis_val : (stBasis : Fin 2 → 𝕜²) = stBasis_val := by
@@ -640,7 +641,7 @@ noncomputable def stOrthonormalBasis : OrthonormalBasis (Fin 2) 𝕜 𝕜² :=
 
 lemma stOrthonormalBasis_eq_stBasis_val :
     (stOrthonormalBasis (𝕜 := 𝕜) : Fin 2 → 𝕜²) = stBasis_val := by
-  simp only [stOrthonormalBasis, Basis.coe_toOrthonormalBasis]
+  simp only [stOrthonormalBasis, Module.Basis.coe_toOrthonormalBasis]
   exact stBasis_eq_stBasis_val
 
 lemma trace_ketbra0 : ketbra0.trace 𝕜 𝕜² = 1 := by
@@ -704,4 +705,4 @@ lemma trace_ket1braM : ket1braM.trace 𝕜 𝕜² = - (1/√2) := by
   exact inner_ketM_ket1
 
 lemma areProjMeas_ketbra0_ketbra1 : LinearMap.areProjMeas (𝕜 := 𝕜) ketbra0 ketbra1 :=
-  ⟨isProjection_ketbra0, isProjection_ketbra1, ketbra0_add_ketbra1_eq⟩
+  ⟨IsStarProjection_ketbra0, IsStarProjection_ketbra1, ketbra0_add_ketbra1_eq⟩

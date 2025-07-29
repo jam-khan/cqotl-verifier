@@ -22,7 +22,7 @@ noncomputable def vplus : 𝕜² := ketP
 
 lemma aux (T : 𝕜² →ₗ[𝕜] 𝕜²) (hT : T.isDensityOperator)
     (h : T.toSubmodule ≤ ketbraP.toSubmodule) :
-    T.isProjection := by
+    IsStarProjection T := by
   have hTsymm := hT.left.isSymmetric
   have h2 : Module.finrank 𝕜 𝕜² = 2 := finrank_euclideanSpace_fin (𝕜 := 𝕜) (n := 2)
   have h' : T.toSubmodule = ketbraP.toSubmodule := by
@@ -63,8 +63,8 @@ lemma aux2 (T : 𝕜² →ₗ[𝕜] 𝕜²) (hT : T.isDensityOperator)
     rw [finrank_toSubmodule_ketbraP, Submodule.one_le_finrank_iff, ne_eq, ← T.eq_zero_iff_toSubmodule_eq_bot]
     exact hT.neZero
   have h' : T.toSubmodule = ketbraP.toSubmodule := Submodule.eq_of_le_of_finrank_eq h hdim
-  have hTproj : T.isProjection := aux T hT h
-  exact (hTproj.eq_iff_toSubmodule_eq isProjection_ketbraP).mpr h'
+  have hTproj : IsStarProjection T := aux T hT h
+  exact (LinearMap.IsStarProjection.eq_iff_toSubmodule_eq hTproj IsStarProjection_ketbraP).mpr h'
 
 lemma obligation_7  :
     ∀ (rho : 𝕜² →ₗ[𝕜] 𝕜²),

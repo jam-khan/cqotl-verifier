@@ -62,11 +62,9 @@ namespace AlgebraicProperties
 /-
 This lemma shows projection `T` is self-adjoint `T† = T`
 -/
-lemma adjointeql (T: E →ₗ[𝕜] E) (hT : LinearMap.isProjection T) : T.adjoint = T := by
-  rw [← @LinearMap.isSelfAdjoint_iff']
-  rcases hT with ⟨hT_posS, hT_proj⟩
-  rcases hT_posS with ⟨hT_self, hT_inner⟩
-  repeat assumption
+lemma adjointeql (T: E →ₗ[𝕜] E) (hT : IsStarProjection T) : T.adjoint = T := by
+  rw [← LinearMap.star_eq_adjoint]
+  exact hT.isSelfAdjoint
 
 omit [FiniteDimensional 𝕜 E]
 

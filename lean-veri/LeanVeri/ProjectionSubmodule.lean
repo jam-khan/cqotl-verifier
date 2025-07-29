@@ -33,22 +33,18 @@ lemma toProjection_eq (K : Submodule 𝕜 E) (x : E) :
     K.toProjection x = K.orthogonalProjection x := rfl
 
 lemma toProjection_valid (K : Submodule 𝕜 E) :
-    K.toProjection.isProjection := by
+    IsStarProjection K.toProjection := by
   constructor
-  · constructor
-    · rw [← LinearMap.isSymmetric_iff_isSelfAdjoint]
-      unfold LinearMap.IsSymmetric
-      intro x y
-      unfold toProjection
-      simp only [LinearMap.coe_comp]
-      exact inner_orthogonalProjection_left_eq_right K x y
-    · intro x
-      unfold toProjection
-      simp only [LinearMap.coe_comp]
-      exact re_inner_orthogonalProjection_nonneg K x
-  · rw [LinearMap.ext_iff]
+  · ext x
     unfold toProjection
-    simp
+    simp only [Module.End.mul_apply, LinearMap.coe_comp, coe_subtype, ContinuousLinearMap.coe_coe, Function.comp_apply]
+    rw [orthogonalProjection_mem_subspace_eq_self]
+  · rw [← LinearMap.isSymmetric_iff_isSelfAdjoint]
+    unfold LinearMap.IsSymmetric
+    intro x y
+    unfold toProjection
+    simp only [LinearMap.coe_comp]
+    exact inner_starProjection_left_eq_right K x y
 
 lemma toSubmodule_toProjection_eq (K : Submodule 𝕜 E) :
     K.toProjection.toSubmodule = K := by
@@ -57,7 +53,10 @@ lemma toSubmodule_toProjection_eq (K : Submodule 𝕜 E) :
   rw [← orthogonalComplement_eq_orthogonalComplement, orthogonal_orthogonal, Submodule.ext_iff]
   intro x
   rw [LinearMap.mem_ker, ← orthogonalProjection_eq_zero_iff]
-  simp
+  simp only [LinearMap.coe_comp, coe_subtype, ContinuousLinearMap.coe_coe, Function.comp_apply,
+    orthogonalProjection_eq_zero_iff]
+  rw [coe_eq_zero]
+  exact orthogonalProjection_eq_zero_iff
 
 lemma eq_iff_toProjection_eq (K₀ K₁ : Submodule 𝕜 E) :
     K₀ = K₁ ↔ K₀.toProjection = K₁.toProjection := by
@@ -67,13 +66,25 @@ lemma eq_iff_toProjection_eq (K₀ K₁ : Submodule 𝕜 E) :
   · intro h
     rw [← K₀.toSubmodule_toProjection_eq, ← K₁.toSubmodule_toProjection_eq, h]
 
+/- Thw following two lemmas where in Mathlib and where changed and deprecated -/
+theorem orthogonalProjection_orthogonal_val' (K : Submodule 𝕜 E) (u : E) :
+    (Kᗮ.orthogonalProjection u : E) = u - K.orthogonalProjection u :=
+  eq_starProjection_of_mem_orthogonal' (sub_starProjection_mem_orthogonal _)
+    (K.le_orthogonal_orthogonal (K.orthogonalProjection u).2) <| by simp
+
+theorem orthogonalProjection_eq_self_iff' {K : Submodule 𝕜 E} {v : E} : (K.orthogonalProjection v : E) = v ↔ v ∈ K := by
+  refine ⟨fun h => ?_, fun h => eq_starProjection_of_mem_of_inner_eq_zero h ?_⟩
+  · rw [← h]
+    simp
+  · simp
+
 end Submodule
 
 namespace LinearMap
 
-namespace isProjection
+namespace IsStarProjection
 
-lemma toSubmodule_eq_range {T : E →ₗ[𝕜] E} (hT : T.isProjection) :
+lemma toSubmodule_eq_range {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) :
     T.toSubmodule = range T := by
   rw [eq_comm]
   apply Submodule.eq_of_le_of_finrank_eq
@@ -81,13 +92,13 @@ lemma toSubmodule_eq_range {T : E →ₗ[𝕜] E} (hT : T.isProjection) :
     unfold toSubmodule
     rw [Submodule.mem_orthogonal]
     intro u hu
-    rw [← hT.apply_range hx, ← (isSymmetric_iff_isSelfAdjoint T).mpr hT.left.left, hu]
+    rw [← apply_range hT hx, ← (isSymmetric_iff_isSelfAdjoint T).mpr hT.isSelfAdjoint, hu]
     exact inner_zero_left x
   · unfold toSubmodule
     rw [Nat.eq_sub_of_add_eq' (ker T).finrank_add_finrank_orthogonal, eq_tsub_iff_add_eq_of_le (ker T).finrank_le]
     exact finrank_range_add_finrank_ker T
 
-lemma toProjection_toSubmodule_eq {T : E →ₗ[𝕜] E} (hT : T.isProjection) :
+lemma toProjection_toSubmodule_eq {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) :
     T.toSubmodule.toProjection = T := by
   rw [LinearMap.ext_iff]
   intro x
@@ -98,25 +109,25 @@ lemma toProjection_toSubmodule_eq {T : E →ₗ[𝕜] E} (hT : T.isProjection) :
   apply Mathlib.Tactic.LinearCombination.add_eq_eq
   · rw [Submodule.toProjection_eq]
     unfold LinearMap.toSubmodule
-    rw [Submodule.orthogonalProjection_orthogonal_val, Submodule.orthogonalProjection_eq_self_iff.mpr hy, sub_self, hy]
+    rw [Submodule.orthogonalProjection_orthogonal_val', Submodule.orthogonalProjection_eq_self_iff'.mpr hy, sub_self, hy]
   · rw [Submodule.toProjection_eq]
     unfold LinearMap.toSubmodule
-    rw [Submodule.orthogonalProjection_orthogonal_val, Submodule.orthogonalProjection_eq_zero_iff.mpr hz,
+    rw [Submodule.orthogonalProjection_orthogonal_val', Submodule.orthogonalProjection_eq_zero_iff.mpr hz,
       ZeroMemClass.coe_zero, sub_zero]
     have hz' : z ∈ range T := by
-      rw [← hT.toSubmodule_eq_range]
+      rw [← toSubmodule_eq_range hT]
       exact hz
-    exact (hT.apply_range hz').symm
+    exact (apply_range hT hz').symm
 
-lemma eq_iff_toSubmodule_eq {T N : E →ₗ[𝕜] E} (hT : T.isProjection) (hN : N.isProjection) :
+lemma eq_iff_toSubmodule_eq {T N : E →ₗ[𝕜] E} (hT : IsStarProjection T) (hN : IsStarProjection N) :
     T = N ↔ T.toSubmodule = N.toSubmodule := by
   apply Iff.intro
   · intro h
     rw [h]
   · intro h
-    rw [← hT.toProjection_toSubmodule_eq, ← hN.toProjection_toSubmodule_eq, h]
+    rw [← toProjection_toSubmodule_eq hT, ← toProjection_toSubmodule_eq hN, h]
 
-end isProjection
+end IsStarProjection
 
 omit [FiniteDimensional 𝕜 E] in
 lemma toSubmodule_zero : (0 : E →ₗ[𝕜] E).toSubmodule = ⊥ := by
@@ -146,23 +157,23 @@ lemma toSubmodule_one : (1 : E →ₗ[𝕜] E).toSubmodule = ⊤ := by
   rw [toSubmodule, Submodule.orthogonal_eq_top_iff]
   rfl
 
-lemma isProjection.eq_one_of_toSubmodule_eq_top {T : E →ₗ[𝕜] E} (hT : T.isProjection) (h : T.toSubmodule = ⊤) :
+lemma IsStarProjection.eq_one_of_toSubmodule_eq_top {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) (h : T.toSubmodule = ⊤) :
     T = 1 := by
-  rw [hT.eq_iff_toSubmodule_eq isProjection.one, toSubmodule_one]
+  rw [IsStarProjection.eq_iff_toSubmodule_eq hT (IsStarProjection.one _), toSubmodule_one]
   exact h
 
-lemma isProjection.eq_one_of_top_le_toSubmodule {T : E →ₗ[𝕜] E} (hT : T.isProjection) (h : ⊤ ≤ T.toSubmodule) :
+lemma IsStarProjection.eq_one_of_top_le_toSubmodule {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) (h : ⊤ ≤ T.toSubmodule) :
     T = 1 := by
   rw [top_le_iff] at h
-  exact hT.eq_one_of_toSubmodule_eq_top h
+  exact IsStarProjection.eq_one_of_toSubmodule_eq_top hT h
 
-lemma isProjection.eq_one_iff_toSubmodule_eq_top {T : E →ₗ[𝕜] E} (hT : T.isProjection) :
+lemma IsStarProjection.eq_one_iff_toSubmodule_eq_top {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) :
     T = 1 ↔ T.toSubmodule = ⊤ := by
   apply Iff.intro
   · intro h
     rw [h]
     exact toSubmodule_one
-  · exact hT.eq_one_of_toSubmodule_eq_top
+  · exact IsStarProjection.eq_one_of_toSubmodule_eq_top hT
 
 /-- The projection corresponding to the orthogonal complement of the submodule of the given linear map. -/
 noncomputable def SubmoduleComplement (T : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
@@ -180,20 +191,18 @@ noncomputable def SubmoduleSup (T N : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
 noncomputable def SasakiImp (T N : E →ₗ[𝕜] E) : E →ₗ[𝕜] E :=
   (T.toSubmodule.SasakiImp N.toSubmodule).toProjection
 
-lemma isProjection.SubmoduleComplement_eq {T : E →ₗ[𝕜] E} (hT : T.isProjection) : T.SubmoduleComplement = 1 - T := by
+lemma IsStarProjection.SubmoduleComplement_eq {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) : T.SubmoduleComplement = 1 - T := by
   ext x
   unfold SubmoduleComplement
-  rw [Submodule.toProjection_eq, Submodule.orthogonalProjection_orthogonal_val, ← Submodule.toProjection_eq,
-    hT.toProjection_toSubmodule_eq]
+  rw [Submodule.toProjection_eq, Submodule.orthogonalProjection_orthogonal_val', ← Submodule.toProjection_eq,
+    IsStarProjection.toProjection_toSubmodule_eq hT]
   rfl
 
-lemma isProjection.SubmoduleComplement_eq_valid {T : E →ₗ[𝕜] E} (hT : T.isProjection) : (1 - T).isProjection := by
-  rw [← hT.SubmoduleComplement_eq]
-  unfold SubmoduleComplement
-  exact Submodule.toProjection_valid _
+lemma IsStarProjection.SubmoduleComplement_eq_valid {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) : IsStarProjection (1 - T) := by
+  exact IsStarProjection.one_sub hT
 
-lemma isProjection.comp_Complement {T : E →ₗ[𝕜] E} (hT : T.isProjection) : T ∘ₗ T.SubmoduleComplement = 0 := by
-  rw [hT.SubmoduleComplement_eq, comp_sub, Module.End.one_eq_id, comp_id, hT.right]
+lemma IsStarProjection.comp_Complement {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) : T ∘ₗ T.SubmoduleComplement = 0 := by
+  rw [SubmoduleComplement_eq hT, comp_sub, Module.End.one_eq_id, comp_id, comp_self hT]
   exact sub_self T
 
 lemma SubmoduleInf_comm (T N : E →ₗ[𝕜] E) : T.SubmoduleInf N = N.SubmoduleInf T := by
@@ -216,12 +225,12 @@ lemma SubmoduleSup_assoc (T N M : E →ₗ[𝕜] E) :
 
 variable {n : ℕ} (hn : Module.finrank 𝕜 E = n)
 
-lemma isProjection.eigenvalues_eq_zero_or_one {T : E →ₗ[𝕜] E} (hT : T.isProjection) (i) :
-    hT.isSymmetric.eigenvalues hn i ∈ ({0, 1} : Finset ℝ) := by
-  let hTsymm : T.IsSymmetric := hT.isSymmetric
+lemma IsStarProjection.eigenvalues_eq_zero_or_one {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) (i) :
+    (isSymmetric hT).eigenvalues hn i ∈ ({0, 1} : Finset ℝ) := by
+  let hTsymm : T.IsSymmetric := isSymmetric hT
   let x : E := hTsymm.eigenvectorBasis hn i
   let c : ℝ := hTsymm.eigenvalues hn i
-  have hT' : T (T x) = T x := LinearMap.ext_iff.mp hT.right x
+  have hT' : T (T x) = T x := LinearMap.ext_iff.mp (comp_self hT) x
   have hc : (c * c : 𝕜) • x = (c : 𝕜) • x := by
     rw [hTsymm.apply_eigenvectorBasis, map_smul, hTsymm.apply_eigenvectorBasis,
       show hTsymm.eigenvalues hn i = c by rfl,
@@ -241,27 +250,27 @@ lemma isProjection.eigenvalues_eq_zero_or_one {T : E →ₗ[𝕜] E} (hT : T.isP
 lemma IsPositive.isProjection_of_eigenvalues_eq_zero_or_one {T : E →ₗ[𝕜] E}
     (hT : T.IsPositive)
     (h : ∀i, hT.isSymmetric.eigenvalues hn i ∈ ({0, 1} : Finset ℝ)) :
-    T.isProjection := by
-  apply And.intro hT
-  ext x
-  rw [coe_comp, Function.comp_apply]
-  have hTsymm : T.IsSymmetric := hT.isSymmetric
-  let base : OrthonormalBasis (Fin n) 𝕜 E := hTsymm.eigenvectorBasis hn
-  let x_repr : EuclideanSpace 𝕜 (Fin n) := base.repr x
-  rw [← OrthonormalBasis.sum_repr base x]
-  repeat rw [map_sum]
-  apply Fintype.sum_congr
-  intro i
-  repeat rw [map_smul]
-  rw [hTsymm.apply_eigenvectorBasis, map_smul, hTsymm.apply_eigenvectorBasis]
-  have hi := h i
-  rw [Finset.mem_insert, Finset.mem_singleton] at hi
-  cases hi <;> simp [*]
+    IsStarProjection T := by
+  constructor
+  · ext x
+    rw [Module.End.mul_apply]
+    have hTsymm : T.IsSymmetric := hT.isSymmetric
+    let base : OrthonormalBasis (Fin n) 𝕜 E := hTsymm.eigenvectorBasis hn
+    let x_repr : EuclideanSpace 𝕜 (Fin n) := base.repr x
+    rw [← OrthonormalBasis.sum_repr base x]
+    repeat rw [map_sum]
+    apply Fintype.sum_congr
+    intro i
+    repeat rw [map_smul]
+    rw [hTsymm.apply_eigenvectorBasis, map_smul, hTsymm.apply_eigenvectorBasis]
+    have hi := h i
+    rw [Finset.mem_insert, Finset.mem_singleton] at hi
+    cases hi <;> simp [*]
+  · exact hT.isSelfAdjoint
 
 lemma IsPositive.isProjection_iff_eigenvalues_eq_zero_or_one {T : E →ₗ[𝕜] E}
     (hT : T.IsPositive) :
-    T.isProjection ↔ ∀i, hT.isSymmetric.eigenvalues hn i ∈ ({0, 1} : Finset ℝ) :=
-  Iff.intro (fun hTproj ↦ hTproj.eigenvalues_eq_zero_or_one hn)
-    (hT.isProjection_of_eigenvalues_eq_zero_or_one hn)
+    IsStarProjection T ↔ ∀i, hT.isSymmetric.eigenvalues hn i ∈ ({0, 1} : Finset ℝ) :=
+  ⟨IsStarProjection.eigenvalues_eq_zero_or_one hn, hT.isProjection_of_eigenvalues_eq_zero_or_one hn⟩
 
 end LinearMap

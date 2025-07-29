@@ -16,7 +16,9 @@ open scoped ComplexOrder
 This file contains some basic propositions about `LinearMap` that are not already in Mathlib.
 Some of this may be later added to Mathlib.
 
-We use `inner 𝕜 (T x) x` in several places, this is what in quantum is some times denotes as `⟨x|T|x⟩`.
+For positive operators we use `LinearMap.IsPositive` from Mathlib, and for orthogonal projections
+we use `IsStarProjection` from Mathlib.
+
 -/
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
@@ -50,74 +52,31 @@ In Mathlib we have `IsUnit T`, but it is a different thing. -/
 def isUnitary (T : E →ₗ[𝕜] E) : Prop :=
   T.isIsometry
 
-/-- Projection operator -/
-def isProjection (T : E →ₗ[𝕜] E) : Prop :=
-  T.IsPositive ∧ T ∘ₗ T = T
-
 /-- Pure state operators. -/
 def isPureState (T : E →ₗ[𝕜] E) : Prop :=
   T.isDensityOperator ∧ T.rank = 1
 
 /-- A pair of projection that covers the full space -/
 def areProjMeas (T S : E →ₗ[𝕜] E) : Prop :=
-  T.isProjection ∧ S.isProjection ∧ T + S = 1
+  IsStarProjection T ∧ IsStarProjection S ∧ T + S = 1
 
 omit [CompleteSpace E]
 
-lemma isProjection.zero : (0 : E →ₗ[𝕜] E).isProjection := And.intro isPositive_zero rfl
-
-lemma isProjection.one : (1 : E →ₗ[𝕜] E).isProjection := And.intro isPositive_one rfl
-
-lemma isProjection.apply_range {T : E →ₗ[𝕜] E} (hT : T.isProjection) {x : E} (hx : x ∈ range T) :
+lemma IsStarProjection.apply_range {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) {x : E} (hx : x ∈ range T) :
     T x = x := by
   obtain ⟨y, hy⟩ := hx
-  rw [← hy, ← comp_apply, hT.right]
+  rw [← hy, ← comp_apply, ← Module.End.mul_eq_comp, hT.isIdempotentElem]
 
-lemma isProjection.isSymmetric {T : E →ₗ[𝕜] E} (hT : T.isProjection) : T.IsSymmetric :=
-  hT.left.isSymmetric
+lemma IsStarProjection.isSymmetric {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) : T.IsSymmetric :=
+  (isSymmetric_iff_isSelfAdjoint T).mpr hT.isSelfAdjoint
 
-lemma isPositive_real_smul_of_isPositive {T : E →ₗ[𝕜] E} (hT : T.IsPositive) {c : ℝ}
-    (hc : 0 ≤ c) : ((c : 𝕜) • T).IsPositive := by
-  apply And.intro
-  · rw [← isSymmetric_iff_isSelfAdjoint]
-    apply IsSymmetric.smul (RCLike.conj_ofReal c) hT.isSymmetric
-  · intro x
-    rw [smul_apply, inner_smul_left, RCLike.conj_ofReal, RCLike.re_ofReal_mul]
-    exact Left.mul_nonneg hc (hT.right x)
+lemma IsStarProjection.comp_self {T : E →ₗ[𝕜] E} (hT : IsStarProjection T) :
+    T ∘ₗ T = T := hT.isIdempotentElem
 
-lemma isPositive_real_smul_of_isPositive' {c : 𝕜} (hc : 0 ≤ c) {T : E →ₗ[𝕜] E}
-    (hT : T.IsPositive)  : (c • T).IsPositive := by
-  let c' : ℝ := RCLike.re c
-  have hstarc : (starRingEnd 𝕜) c = c := by
-    rw [RCLike.conj_eq_iff_im]
-    simp [← (RCLike.le_iff_re_im.mp hc).right]
-  have hcc' : c = c' := by
-    rw [RCLike.ext_iff]
-    apply And.intro
-    · simp [c']
-    · simp only [RCLike.ofReal_im, c']
-      exact RCLike.conj_eq_iff_im.mp hstarc
-  have hc' : 0 ≤ c' := by
-    rw [← @RCLike.zero_re 𝕜]
-    exact (RCLike.le_iff_re_im.mp hc).left
-  rw [hcc']
-  exact isPositive_real_smul_of_isPositive hT hc'
-
+omit [FiniteDimensional 𝕜 E] in
 lemma IsPositive.sub_of_LoewnerOrder {T S : E →ₗ[𝕜] E} (h : T ≤ S) :
-    (S - T).IsPositive := by
-  apply And.intro
-  · rw [← isSymmetric_iff_isSelfAdjoint]
-    exact h.isSymmetric
-  · exact h.right
-
-lemma IsPositive.nonneg_real_smul {T : E →ₗ[𝕜] E} (hT : T.IsPositive)
-    {c : ℝ} (hc : 0 ≤ c) : ((c : 𝕜) • T).IsPositive := by
-  apply And.intro
-  · rw [← isSymmetric_iff_isSelfAdjoint]
-    exact IsSymmetric.smul (RCLike.conj_ofReal c) hT.isSymmetric
-  · intro x
-    rw [smul_apply, inner_smul_left, RCLike.conj_ofReal, RCLike.re_ofReal_mul]
-    exact Left.mul_nonneg hc (hT.right x)
+    (S - T).IsPositive :=
+  And.intro h.isSymmetric h.right
 
 omit [FiniteDimensional 𝕜 E] in
 lemma eq_zero_iff_forall_re_inner_eq_zero (T : E →ₗ[𝕜] E) :
@@ -259,6 +218,7 @@ theorem IsPositive.inner_app_eq_zero_iff_app_eq_zero {T : E →ₗ[𝕜] E} (hT 
     rw [hx]
     simp
 
+omit [FiniteDimensional 𝕜 E] in
 lemma isDensityOperator.neZero {T : E →ₗ[𝕜] E} (hT : T.isDensityOperator) : T ≠ 0 := by
   intro h
   have htr := hT.right
@@ -272,7 +232,9 @@ lemma LoewnerOrder_iff_of_IsPositive {T N : E →ₗ[𝕜] E} (hT : T.IsPositive
   · intro h
     exact (IsPositive.sub_of_LoewnerOrder h).right
   · intro h
-    exact And.intro (IsSelfAdjoint.sub hN.left hT.left) h
+    exact And.intro
+      ((isSymmetric_iff_isSelfAdjoint _).mpr (IsSelfAdjoint.sub hN.isSelfAdjoint hT.isSelfAdjoint))
+      h
 
 lemma LoewnerOrder_iff_of_IsPositive' {T N : E →ₗ[𝕜] E} (hT : T.IsPositive)
     (hN : N.IsPositive) :

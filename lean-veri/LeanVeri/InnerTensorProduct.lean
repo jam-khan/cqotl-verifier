@@ -74,7 +74,7 @@ lemma linner_nonneg (x : E ⊗[𝕜] F) : 0 ≤ linner 𝕜 x x := by
   let ⟨_, bF', _⟩ := exists_orthonormalBasis 𝕜 F
   let bE := bE'.toBasis
   let bF := bF'.toBasis
-  let b := Basis.tensorProduct bE bF
+  let b := Module.Basis.tensorProduct bE bF
   rw [← b.sum_repr x, map_sum (linner 𝕜), LinearMap.sum_apply]
   simp +contextual only [map_sum]
   apply Finset.sum_nonneg'
@@ -119,7 +119,7 @@ noncomputable instance InnerProductSpace_Core_TensorProduct : InnerProductSpace.
     let ⟨_, bF', _⟩ := exists_orthonormalBasis 𝕜 F
     let bE := bE'.toBasis
     let bF := bF'.toBasis
-    let b := Basis.tensorProduct bE bF
+    let b := Module.Basis.tensorProduct bE bF
     rw [← b.sum_repr x, map_sum (linner 𝕜), LinearMap.sum_apply] at h
     simp +contextual only [map_sum] at h
 
@@ -163,7 +163,7 @@ noncomputable instance InnerProductSpace_Core_TensorProduct : InnerProductSpace.
     apply Finset.sum_eq_zero
     intro ⟨i, j⟩ _
     have hij'' := h ⟨i, j⟩
-    simp only [Pi.zero_apply, LinearMap.map_smulₛₗ, map_smul, LinearMap.smul_apply, smul_eq_mul, ge_iff_le] at hij''
+    simp only [Pi.zero_apply, LinearMap.map_smulₛₗ, map_smul, LinearMap.smul_apply, smul_eq_mul] at hij''
     repeat rw [bE.tensorProduct_apply' bF] at hij''
     repeat rw [bE.tensorProduct_apply' bF]
     rw [linner_tmul] at hij''
@@ -205,4 +205,3 @@ lemma outerProduct_tmul (x : E) (y : F) (z : G) (w : H) :
   rw [inner_tmul, ← smul_tmul', smul_smul, mul_comm]
 
 end TensorProduct
-
