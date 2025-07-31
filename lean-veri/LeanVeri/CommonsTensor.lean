@@ -5,6 +5,8 @@ open scoped TensorProduct
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
+open LinearMap
+
 local notation "𝕜²" => EuclideanSpace 𝕜 (Fin 2)
 local notation "𝕜²²" => 𝕜² ⊗[𝕜] 𝕜²
 
@@ -30,10 +32,10 @@ noncomputable def ket11bra01 : 𝕜²² →ₗ[𝕜] 𝕜²² := outerProduct �
 noncomputable def ket11bra10 : 𝕜²² →ₗ[𝕜] 𝕜²² := outerProduct 𝕜 ket11 ket10
 noncomputable def ketbra11 : 𝕜²² →ₗ[𝕜] 𝕜²² := outerProduct 𝕜 ket11 ket11
 
-lemma isSelfAdjoint_ketbra00 : IsSelfAdjoint (ketbra00 : 𝕜²² →ₗ[𝕜] 𝕜²²) := IsSelfAdjoint_outerProduct_self 𝕜 ket00
-lemma isSelfAdjoint_ketbra01 : IsSelfAdjoint (ketbra01 : 𝕜²² →ₗ[𝕜] 𝕜²²) := IsSelfAdjoint_outerProduct_self 𝕜 ket01
-lemma isSelfAdjoint_ketbra10 : IsSelfAdjoint (ketbra10 : 𝕜²² →ₗ[𝕜] 𝕜²²) := IsSelfAdjoint_outerProduct_self 𝕜 ket10
-lemma isSelfAdjoint_ketbra11 : IsSelfAdjoint (ketbra11 : 𝕜²² →ₗ[𝕜] 𝕜²²) := IsSelfAdjoint_outerProduct_self 𝕜 ket11
+lemma isSelfAdjoint_ketbra00 : IsSelfAdjoint (ketbra00 : 𝕜²² →ₗ[𝕜] 𝕜²²) := isSelfAdjoint_outerProduct_self 𝕜 ket00
+lemma isSelfAdjoint_ketbra01 : IsSelfAdjoint (ketbra01 : 𝕜²² →ₗ[𝕜] 𝕜²²) := isSelfAdjoint_outerProduct_self 𝕜 ket01
+lemma isSelfAdjoint_ketbra10 : IsSelfAdjoint (ketbra10 : 𝕜²² →ₗ[𝕜] 𝕜²²) := isSelfAdjoint_outerProduct_self 𝕜 ket10
+lemma isSelfAdjoint_ketbra11 : IsSelfAdjoint (ketbra11 : 𝕜²² →ₗ[𝕜] 𝕜²²) := isSelfAdjoint_outerProduct_self 𝕜 ket11
 
 lemma isPositive_ketbra00 : (ketbra00 : 𝕜²² →ₗ[𝕜] 𝕜²²).IsPositive := isPositive_outerProduct_self 𝕜 ket00
 lemma isPositive_ketbra01 : (ketbra01 : 𝕜²² →ₗ[𝕜] 𝕜²²).IsPositive := isPositive_outerProduct_self 𝕜 ket01
@@ -56,4 +58,3 @@ lemma ket11bra00_eq : ket11bra00 = TensorProduct.mapBilinear 𝕜 𝕜² 𝕜² 
 lemma ket11bra01_eq : ket11bra01 = TensorProduct.mapBilinear 𝕜 𝕜² 𝕜² 𝕜² 𝕜² ket1bra0 ketbra1 := TensorProduct.outerProduct_tmul 𝕜 ket1 ket1 ket0 ket1
 lemma ket11bra10_eq : ket11bra10 = TensorProduct.mapBilinear 𝕜 𝕜² 𝕜² 𝕜² 𝕜² ketbra1 ket1bra0 := TensorProduct.outerProduct_tmul 𝕜 ket1 ket1 ket1 ket0
 lemma ketbra11_eq : ketbra11 = TensorProduct.mapBilinear 𝕜 𝕜² 𝕜² 𝕜² 𝕜² ketbra1 ketbra1 := TensorProduct.outerProduct_tmul 𝕜 ket1 ket1 ket1 ket1
-

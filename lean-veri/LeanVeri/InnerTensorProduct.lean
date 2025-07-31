@@ -197,6 +197,7 @@ variable [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
 variable [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 variable [FiniteDimensional 𝕜 G] [FiniteDimensional 𝕜 H]
 
+open LinearMap in
 lemma outerProduct_tmul (x : E) (y : F) (z : G) (w : H) :
     outerProduct 𝕜 (x ⊗ₜ[𝕜] y) (z ⊗ₜ[𝕜] w) = mapBilinear 𝕜 G H E F (outerProduct 𝕜 x z) (outerProduct 𝕜 y w) := by
   ext u v

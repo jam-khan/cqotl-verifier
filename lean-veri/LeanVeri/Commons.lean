@@ -19,6 +19,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 
 local notation "𝕜²" => EuclideanSpace 𝕜 (Fin 2)
 
+open LinearMap
 
 /-- Ket zero, usually denoted as |0⟩. -/
 def ket0 : 𝕜² := !₂[1, 0]
@@ -127,16 +128,16 @@ lemma norm_ketM : norm (ketM : 𝕜²) = 1 := by
   field_simp [ketM, ket0, ket1]
 
 lemma isSelfAdjoint_ketbra0 : IsSelfAdjoint (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsSelfAdjoint_outerProduct_self 𝕜 ket0
+  isSelfAdjoint_outerProduct_self 𝕜 ket0
 
 lemma isSelfAdjoint_ketbra1 : IsSelfAdjoint (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsSelfAdjoint_outerProduct_self 𝕜 ket1
+  isSelfAdjoint_outerProduct_self 𝕜 ket1
 
 lemma IsStarProjection_ketbraP : IsStarProjection (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketP
+  isStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketP
 
 lemma IsStarProjection_ketbraM : IsStarProjection (ketbraM : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketM
+  isStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ketM
 
 
 lemma inner_ket0_ket0 : inner 𝕜 (ket0 : 𝕜²) ket0 = 1 :=
@@ -186,16 +187,16 @@ lemma isPositive_ketbra1 : LinearMap.IsPositive (ketbra1 : 𝕜² →ₗ[𝕜] �
   isPositive_outerProduct_self 𝕜 ket1
 
 lemma IsStarProjection_ketbra0 : IsStarProjection (ketbra0 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket0
+  isStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket0
 
 lemma IsStarProjection_ketbra1 : IsStarProjection (ketbra1 : 𝕜² →ₗ[𝕜] 𝕜²) :=
-  IsStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket1
+  isStarProjection_outerProduct_self_of_norm_eq_one 𝕜 norm_ket1
 
 lemma isSelfAdjoint_ketbraP : @IsSelfAdjoint (𝕜² →ₗ[𝕜] 𝕜²) _ ketbraP :=
-  IsSelfAdjoint_outerProduct_self 𝕜 ketP
+  isSelfAdjoint_outerProduct_self 𝕜 ketP
 
 lemma isSelfAdjoint_ketbraM : @IsSelfAdjoint (𝕜² →ₗ[𝕜] 𝕜²) _ ketbraM :=
-  IsSelfAdjoint_outerProduct_self 𝕜 ketM
+  isSelfAdjoint_outerProduct_self 𝕜 ketM
 
 lemma isPositive_ketbraP : LinearMap.IsPositive (ketbraP : 𝕜² →ₗ[𝕜] 𝕜²) :=
   isPositive_outerProduct_self 𝕜 ketP
@@ -324,7 +325,7 @@ lemma ketbra0_eq : ketbra0 = (1/2 : 𝕜) • ketbraP + (1/2 : 𝕜) • (ketPbr
       = outerProduct 𝕜 ket0 ket0 := rfl
     _ = outerProduct 𝕜 ((1/√2 : 𝕜) • (ketP + ketM)) ket0 := by nth_rw 1 [ket0_eq_ketP_add_ketM]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 (ketP + ketM) ket0 := by apply outerProduct_smul_assoc_left
-    _ = (1/√2 : 𝕜) • (outerProduct 𝕜 ketP ket0 + outerProduct 𝕜 ketM ket0) := by rw [RCLike.ofReal_alg, outerProduct_add_dist_left]
+    _ = (1/√2 : 𝕜) • (outerProduct 𝕜 ketP ket0 + outerProduct 𝕜 ketM ket0) := by rw [RCLike.ofReal_alg, outerProduct_add_left]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ketP ket0 + (1/√2 : 𝕜) • outerProduct 𝕜 ketM ket0 := by rw [smul_add]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ketP ((1/√2 : 𝕜) • (ketP + ketM)) + (1/√2 : 𝕜) • outerProduct 𝕜 ketM ((1/√2 : 𝕜) • (ketP + ketM)) := by
       repeat rw [ket0_eq_ketP_add_ketM]
@@ -335,7 +336,7 @@ lemma ketbra0_eq : ketbra0 = (1/2 : 𝕜) • ketbraP + (1/2 : 𝕜) • (ketPbr
     _ = (1/2 : 𝕜) • outerProduct 𝕜 ketP (ketP + ketM) + (1/2 : 𝕜) • outerProduct 𝕜 ketM (ketP + ketM) := by
       repeat rw [← smul_assoc, show (1/√2 : 𝕜) • (1/√2 : 𝕜) = 1 / 2 by field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]]
     _ = (1/2 : 𝕜) • ketbraP + (1/2 : 𝕜) • (ketPbraM : 𝕜² →ₗ[𝕜] 𝕜²) + (1/2 : 𝕜) •  ketMbraP + (1/2 : 𝕜) • ketbraM := by
-      repeat rw [outerProduct_add_dist_right]
+      repeat rw [outerProduct_add_right]
       simp only [smul_add]
       rw [← ketbraM, ← ketMbraP, ← ketPbraM, ← ketbraP]
       abel
@@ -347,7 +348,7 @@ lemma ketbra1_eq : ketbra1 = (1/2 : 𝕜) • ketbraP - (1/2 : 𝕜) • (ketPbr
     _ = outerProduct 𝕜 ((1/√2 : 𝕜) • (ketP - ketM)) ket1 := by nth_rw 1 [ket1_eq_ketP_sub_ketM]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 (ketP - ketM) ket1 := by apply outerProduct_smul_assoc_left
     _ = (1/√2 : 𝕜) • (outerProduct 𝕜 ketP ket1 - outerProduct 𝕜 ketM ket1) := by
-      rw [RCLike.ofReal_alg, outerProduct_sub_dist_left]
+      rw [RCLike.ofReal_alg, outerProduct_sub_left]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ketP ket1 - (1/√2 : 𝕜) • outerProduct 𝕜 ketM ket1 := by
       rw [smul_sub]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ketP ((1/√2 : 𝕜) • (ketP - ketM)) - (1/√2 : 𝕜) • outerProduct 𝕜 ketM ((1/√2 : 𝕜) • (ketP - ketM)) := by
@@ -359,7 +360,7 @@ lemma ketbra1_eq : ketbra1 = (1/2 : 𝕜) • ketbraP - (1/2 : 𝕜) • (ketPbr
     _ = (1/2 : 𝕜) • outerProduct 𝕜 ketP (ketP - ketM) - (1/2 : 𝕜) • outerProduct 𝕜 ketM (ketP - ketM) := by
       repeat rw [← smul_assoc, show (1/√2 : 𝕜) • (1/√2 : 𝕜) = 1 / 2 by field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]]
     _ = (1/2 : 𝕜) • ketbraP - (1/2 : 𝕜) • (ketPbraM : 𝕜² →ₗ[𝕜] 𝕜²) - (1/2 : 𝕜) •  ketMbraP + (1/2 : 𝕜) • ketbraM := by
-      repeat rw [outerProduct_sub_dist_right]
+      repeat rw [outerProduct_sub_right]
       simp only [smul_sub]
       rw [← ketbraM, ← ketMbraP, ← ketPbraM, ← ketbraP]
       abel
@@ -371,7 +372,7 @@ lemma ketbraP_eq : ketbraP = (1/2 : 𝕜) • ketbra0 + (1/2 : 𝕜) • (ket0br
     _ = outerProduct 𝕜 ((1/√2 : 𝕜) • (ket0 + ket1)) ketP  := by nth_rw 1 [ketP]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 (ket0 + ket1) ketP    := by apply outerProduct_smul_assoc_left
     _ = (1/√2 : 𝕜) • (outerProduct 𝕜 ket0 ketP + outerProduct 𝕜 ket1 ketP) := by
-      rw [RCLike.ofReal_alg, outerProduct_add_dist_left]
+      rw [RCLike.ofReal_alg, outerProduct_add_left]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ket0 ketP + (1/√2 : 𝕜) • outerProduct 𝕜 ket1 ketP := by
       rw [smul_add]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ket0 ((1/√2 : 𝕜) • (ket0 + ket1)) + (1/√2 : 𝕜) • outerProduct 𝕜 ket1 ((1/√2 : 𝕜) • (ket0 + ket1)) := by
@@ -383,7 +384,7 @@ lemma ketbraP_eq : ketbraP = (1/2 : 𝕜) • ketbra0 + (1/2 : 𝕜) • (ket0br
     _ = (1/2 : 𝕜) • outerProduct 𝕜 ket0 (ket0 + ket1) + (1/2 : 𝕜) • outerProduct 𝕜 ket1 (ket0 + ket1) := by
       repeat rw [← smul_assoc, show (1/√2 : 𝕜) • (1/√2 : 𝕜) = 1 / 2 by field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]]
     _ = (1/2 : 𝕜) • ketbra0 + (1/2 : 𝕜) • (ket0bra1 : 𝕜² →ₗ[𝕜] 𝕜²) + (1/2 : 𝕜) •  ket1bra0 + (1/2 : 𝕜) • ketbra1 := by
-      repeat rw [outerProduct_add_dist_right]
+      repeat rw [outerProduct_add_right]
       simp only [smul_add]
       rw [← ketbra0, ← ket1bra0, ← ket0bra1, ← ketbra1]
       abel
@@ -396,7 +397,7 @@ lemma ketbraM_eq : ketbraM = (1/2 : 𝕜) • ketbra0 - (1/2 : 𝕜) • (ket0br
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 (ket0 - ket1) ketM    := by
       apply outerProduct_smul_assoc_left
     _ = (1/√2 : 𝕜) • (outerProduct 𝕜 ket0 ketM - outerProduct 𝕜 ket1 ketM) := by
-      rw [RCLike.ofReal_alg, outerProduct_sub_dist_left]
+      rw [RCLike.ofReal_alg, outerProduct_sub_left]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ket0 ketM - (1/√2 : 𝕜) • outerProduct 𝕜 ket1 ketM := by
       rw [smul_sub]
     _ = (1/√2 : 𝕜) • outerProduct 𝕜 ket0 ((1/√2 : 𝕜) • (ket0 - ket1)) - (1/√2 : 𝕜) • outerProduct 𝕜 ket1 ((1/√2 : 𝕜) • (ket0 - ket1)) := by
@@ -409,7 +410,7 @@ lemma ketbraM_eq : ketbraM = (1/2 : 𝕜) • ketbra0 - (1/2 : 𝕜) • (ket0br
     _ = (1/2 : 𝕜) • outerProduct 𝕜 ket0 (ket0 - ket1) - (1/2 : 𝕜) • outerProduct 𝕜 ket1 (ket0 - ket1) := by
       repeat rw [← smul_assoc, show (1/√2 : 𝕜) • (1/√2 : 𝕜) = 1 / 2 by field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]]
     _ = (1/2 : 𝕜) • ketbra0 - (1/2 : 𝕜) • (ket0bra1 : 𝕜² →ₗ[𝕜] 𝕜²) - (1/2 : 𝕜) •  ket1bra0 + (1/2 : 𝕜) • ketbra1 := by
-      repeat rw [outerProduct_sub_dist_right]
+      repeat rw [outerProduct_sub_right]
       simp only [smul_sub]
       rw [← ketbra0, ← ket1bra0, ← ket0bra1, ← ketbra1]
       abel
@@ -426,7 +427,7 @@ lemma ketbraP_eq_one_sub_ketbraM : ketbraP = (1 : 𝕜² →ₗ[𝕜] 𝕜²) - 
   apply ketbra0_add_ketbra1_eq
 
 lemma ketbraP_add_ketbraM_eq : ketbraP + ketbraM = (1 : 𝕜² →ₗ[𝕜] 𝕜²)  := by
-  rw [← @eq_sub_iff_add_eq]
+  rw [← eq_sub_iff_add_eq]
   apply ketbraP_eq_one_sub_ketbraM
 
 lemma ket1bra0_comp_ket1bra0_eq : ket1bra0 ∘ₗ ket1bra0 = (0 : 𝕜² →ₗ[𝕜] 𝕜²) := by
@@ -539,7 +540,7 @@ lemma isUnitary_Hadamard : LinearMap.isUnitary (Hadamard (𝕜 := 𝕜)) := by
   repeat rw [smul_smul]
   simp only [one_div, map_inv₀, RCLike.conj_ofReal]
   field_simp [← RCLike.ofReal_mul, RCLike.ofReal_ofNat]
-  repeat rw [outerProduct_add_dist_right, outerProduct_sub_dist_right]
+  repeat rw [outerProduct_add_right, outerProduct_sub_right]
   repeat rw [smul_add, smul_sub]
   repeat rw [neg_div]
   repeat rw [neg_smul]
@@ -646,62 +647,62 @@ lemma stOrthonormalBasis_eq_stBasis_val :
 
 lemma trace_ketbra0 : ketbra0.trace 𝕜 𝕜² = 1 := by
   unfold ketbra0
-  rw [trace_outerProduct 𝕜 ket0 ket0 stOrthonormalBasis]
+  rw [trace_outerProduct ket0 ket0 stOrthonormalBasis]
   exact inner_ket0_ket0
 
 lemma trace_ketbra1 : ketbra1.trace 𝕜 𝕜² = 1 := by
   unfold ketbra1
-  rw [trace_outerProduct 𝕜 ket1 ket1 stOrthonormalBasis]
+  rw [trace_outerProduct ket1 ket1 stOrthonormalBasis]
   exact inner_ket1_ket1
 
 lemma trace_ketbraP : ketbraP.trace 𝕜 𝕜² = 1 := by
   unfold ketbraP
-  rw [trace_outerProduct 𝕜 ketP ketP stOrthonormalBasis]
+  rw [trace_outerProduct ketP ketP stOrthonormalBasis]
   exact inner_ketP_ketP
 
 lemma trace_ketbraM : ketbraM.trace 𝕜 𝕜² = 1 := by
   unfold ketbraM
-  rw [trace_outerProduct 𝕜 ketM ketM stOrthonormalBasis]
+  rw [trace_outerProduct ketM ketM stOrthonormalBasis]
   exact inner_ketM_ketM
 
 lemma trace_ket0bra1 : ket0bra1.trace 𝕜 𝕜² = 0 := by
   unfold ket0bra1
-  rw [trace_outerProduct 𝕜 ket0 ket1 stOrthonormalBasis]
+  rw [trace_outerProduct ket0 ket1 stOrthonormalBasis]
   exact inner_ket1_ket0
 
 lemma trace_ket1bra0 : ket1bra0.trace 𝕜 𝕜² = 0 := by
   unfold ket1bra0
-  rw [trace_outerProduct 𝕜 ket1 ket0 stOrthonormalBasis]
+  rw [trace_outerProduct ket1 ket0 stOrthonormalBasis]
   exact inner_ket0_ket1
 
 lemma trace_ketPbraM : ketPbraM.trace 𝕜 𝕜² = 0 := by
   unfold ketPbraM
-  rw [trace_outerProduct 𝕜 ketP ketM stOrthonormalBasis]
+  rw [trace_outerProduct ketP ketM stOrthonormalBasis]
   exact inner_ketM_ketP
 
 lemma trace_ketMbraP : ketMbraP.trace 𝕜 𝕜² = 0 := by
   unfold ketMbraP
-  rw [trace_outerProduct 𝕜 ketM ketP stOrthonormalBasis]
+  rw [trace_outerProduct ketM ketP stOrthonormalBasis]
   exact inner_ketP_ketM
 
 lemma trace_ket0braP : ket0braP.trace 𝕜 𝕜² = 1/√2 := by
   unfold ket0braP
-  rw [trace_outerProduct 𝕜 ket0 ketP stOrthonormalBasis]
+  rw [trace_outerProduct ket0 ketP stOrthonormalBasis]
   exact inner_ketP_ket0
 
 lemma trace_ket1braP : ket1braP.trace 𝕜 𝕜² = 1/√2 := by
   unfold ket1braP
-  rw [trace_outerProduct 𝕜 ket1 ketP stOrthonormalBasis]
+  rw [trace_outerProduct ket1 ketP stOrthonormalBasis]
   exact inner_ketP_ket1
 
 lemma trace_ket0braM : ket0braM.trace 𝕜 𝕜² = 1/√2 := by
   unfold ket0braM
-  rw [trace_outerProduct 𝕜 ket0 ketM stOrthonormalBasis]
+  rw [trace_outerProduct ket0 ketM stOrthonormalBasis]
   exact inner_ketM_ket0
 
 lemma trace_ket1braM : ket1braM.trace 𝕜 𝕜² = - (1/√2) := by
   unfold ket1braM
-  rw [trace_outerProduct 𝕜 ket1 ketM stOrthonormalBasis]
+  rw [trace_outerProduct ket1 ketM stOrthonormalBasis]
   exact inner_ketM_ket1
 
 lemma areProjMeas_ketbra0_ketbra1 : LinearMap.areProjMeas (𝕜 := 𝕜) ketbra0 ketbra1 :=
