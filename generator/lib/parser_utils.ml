@@ -1,22 +1,27 @@
 open Ast
 module I  = Parser.MenhirInterpreter
 
+(** Incremental Menhir driver that parses command streams while keeping
+    the longest successfully parsed prefix. The watcher relies on this to
+    surface syntax errors without discarding earlier commands. *)
+
 exception SyntaxError of string
 
 (* Type Definitions for the `parser_utils.ml` *)
-(* keep best commands *)
-type best = {
+(** Snapshot of the furthest successfully parsed prefix. *)
+type parsed_prefix = {
   cp   : command list I.checkpoint;   (* the checkpoint itself *)
   ast  : command list;                (* materialised AST      *)
   size : int;                         (* length of [ast]       *)
 }
 
+(** Result of an incremental parse attempt. *)
 type inc_parse_result = 
   | Complete of command list
   | Partial of command list * string
 
 
-let empty_best init_cp = { cp = init_cp; ast = []; size = 0; }
+let empty_prefix init_cp = { cp = init_cp; ast = []; size = 0; }
 
 let rec drain cp =
   match cp with
@@ -32,7 +37,7 @@ let try_accept (cp : _ I.checkpoint) (pos : Lexing.position)
   | _              -> None           (* parser not complete here *)
   
 (* Incremental Parser with loop and entry point *)
-let rec loop lexbuf (checkpoint : command list I.checkpoint) (bst: best): inc_parse_result = 
+let rec loop lexbuf (checkpoint : command list I.checkpoint) (best_prefix : parsed_prefix) : inc_parse_result =
   match checkpoint with
   | I.InputNeeded _env   ->
     (*The parser needs a token. Request one from the lexer,
@@ -41,25 +46,25 @@ let rec loop lexbuf (checkpoint : command list I.checkpoint) (bst: best): inc_pa
       let   token     = Lexer.token lexbuf  in (* Taking the next token from the lexer *)
       let   startp    = lexbuf.lex_start_p  in (* Start point at the lex buffer *)
       let   endp      = lexbuf.lex_curr_p   in (* End point at the lex buffer *)
-      let   bst =
+      let best_prefix =
         match try_accept checkpoint endp with
-        | Some ast when List.length ast > bst.size ->
+        | Some ast when List.length ast > best_prefix.size ->
               { cp = checkpoint; ast; size = List.length ast }
-        | _ -> bst
+        | _ -> best_prefix
       in
       let checkpoint  = I.offer checkpoint (token, startp, endp) in (* Get the next checkpoint *)
-      loop lexbuf checkpoint bst (* Repeat the loop *)
+      loop lexbuf checkpoint best_prefix (* Repeat the loop *)
   | I.Shifting _
   | I.AboutToReduce _     ->
       let checkpoint  = I.resume checkpoint in
-        loop lexbuf checkpoint bst
+        loop lexbuf checkpoint best_prefix
   | I.HandlingError _ ->
       let pos = lexbuf.Lexing.lex_curr_p in
       let offending_token = Lexing.lexeme lexbuf in
       let msg = Printf.sprintf
         "unexpected \"%s\" (line %d, column %d)"
         offending_token pos.pos_lnum (pos.pos_cnum - pos.pos_bol) in
-      Partial (bst.ast, msg)
+      Partial (best_prefix.ast, msg)
   | I.Accepted v          ->
       (* The parser has succeeded and produced a semantic value. Print it. *)
       Complete v
@@ -72,9 +77,9 @@ let rec loop lexbuf (checkpoint : command list I.checkpoint) (bst: best): inc_pa
 let parse_top_inc (input : string) : inc_parse_result =
   let lexbuf      = Lexing.from_string input in
   let checkpoint  = (Parser.Incremental.command_list lexbuf.lex_curr_p) in
-  let best0       = empty_best checkpoint in
+  let initial_prefix = empty_prefix checkpoint in
   (* Drive the incremental parser loop until completion *)
-  loop lexbuf checkpoint best0
+  loop lexbuf checkpoint initial_prefix
 
 let parse_terms (input : string) : terms =
   let lexbuf      = Lexing.from_string input in

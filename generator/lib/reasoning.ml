@@ -4,6 +4,8 @@ open Ast_transform
 open Utils 
 open Parser_utils
 open Typing
+
+(** Rewriting and simplification passes shared by quantum reasoning tactics. *)
 (* open Pretty_printer *)
 
 

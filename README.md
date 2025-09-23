@@ -1,58 +1,69 @@
 # (Maybe Complete) Classical-Quantum Relational Hoare Logics
 
-This is the project repository for cqotl.
+CQOTL combines an OCaml verification-condition generator with a Lean 4 development for relational Hoare logic over classical-quantum programs.
 
 GitHub repository: https://github.com/LucianoXu/cqotl.git
 
-## Structure
-- `generator`: the verification condition generator in OCaml
-- `lean-veri`: the formalization of theories for verification conditions in Lean
+## Repository layout
+- `generator/`: OCaml project that parses Rocq-style scripts, evaluates proof commands, and exports Lean obligations.
+- `lean-veri/`: Lean 4 project that discharges the generated proof obligations.
+- `docs/`: Markdown documentation (start with `docs/index.md`).
+- `draft/`: LaTeX notes and paper drafts.
+- `cqotl_path.config`: Path hint used by the Lean obligation exporter.
 
-## Setup & Installation
+## Quick start (generator)
 
-### Running the Dune Project in `generator/`
+### Prerequisites
+- **OCaml** 4.12 or later (4.14+ recommended).
+- **opam** for dependency management.
+- **dune** 2.9+.
+- **menhir** 3.0+.
 
-#### Prerequisites
-- **OCaml** (version 4.12.0 or later recommended)
-- **Dune** (version 2.9.0 or later)
-- **opam** (for dependency management)
-- **Menhir** (version 3.0 or later)
-#### Setup and Execution
+### Build steps
 
-1. Navigate to the `generator` directory:
-   ```bash
-   cd generator
-   ```
-
-2. Install dependencies:
-    ```bash
-    opam install . --deps-only
-    ```
-
-3. Build and run:
-    ```bash
-    dune build && dune exec filewatcher source status
-    ```
-## Usage of CQOTL
-The prover executable accepts two command line argument as the source input and status output file. To start the prover, navigate to `generator` folder and run
+```bash
+cd generator
+opam install . --deps-only            # installs dune, menhir, etc.
+dune build
 ```
+
+For an isolated toolchain you can create a local switch first:
+
+```bash
+opam switch create . 4.14.1 --deps-only --locked
+```
+
+## Prover loop
+
+Launch the interactive watcher from `generator/`:
+
+```bash
 dune exec filewatcher source status
 ```
-This will create two text files `generator/source` and `generator/status`. The prover will monitor the changes made to the source file and the response will be written to the output file.
 
+- `source` collects the Rocq-style commands you edit.
+- `status` is rewritten after every successful parse, showing the current environment, open goals, or syntax/typing errors.
+- Both files are created automatically if they are missing.
 
-## Tasks to be completed:
+Keep the watcher running in a terminal while you edit `source`; the process replays the script whenever the file timestamp changes.
 
-### Generator
+## Lean integration
 
-- [ ] Implementation of qWhile
-    - [x] Parsing, AST, and Pretty Printing Added
-    - [ ] qWhile examples
-    - [ ] assertiong language
-    - [ ] (maybe) semantics
+1. Ensure `cqotl_path.config` points at the repository root.
+2. Use the Lean generator inside a Dune toplevel (`dune utop` → `open Cqotl_vgc.Lean_generator;;`) or wire a small wrapper executable.
+3. Generated obligations are written under `lean-veri/LeanVeri/Examples/`.
+4. Build the Lean project with:
 
-- [ ] REPL
-    - [x] Basic command line REPL
-    - [ ] Solve the parsing conflicts (see _build/default/lib/parser.conflicts)
-    - [ ] REPL context
-    - [ ] Pretty-printing
+   ```bash
+   cd lean-veri
+   lake build
+   ```
+
+Refer to `docs/lean-integration.md` for the full translation pipeline and future improvements.
+
+## Documentation
+
+- `docs/index.md` – entry point covering available guides.
+- `docs/development.md` – macOS setup notes, build instructions, and troubleshooting.
+- `docs/generator.md` – architecture overview of the OCaml codebase.
+- `docs/examples.md` – catalogue of case studies shipped with the repository.

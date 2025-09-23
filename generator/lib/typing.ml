@@ -1232,5 +1232,3 @@ and term_synthesize (wfctx: wf_ctx) (t: terms) : bool =
       false
     end
       
-
-
