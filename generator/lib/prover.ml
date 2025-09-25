@@ -415,6 +415,7 @@ and eval_tactic (p: prover) (tac : tactic) : eval_result =
           | R_SKIP            -> eval_tac_R_SKIP  proof_f
           | R_SEQ (n1, n2, t) -> eval_tac_R_SEQ proof_f n1 n2 t
           | R_ASSIGN          -> eval_tac_R_ASSIGN  proof_f
+          | R_SAMPLE          -> eval_tac_R_SAMPLE  proof_f
           | R_INITQ           -> eval_tac_R_INITQ   proof_f
           | R_UNITARY         -> eval_tac_R_UNITARY proof_f
           | R_MEAS            -> eval_tac_R_MEAS  proof_f
@@ -423,6 +424,7 @@ and eval_tactic (p: prover) (tac : tactic) : eval_result =
           | R_WHILE_WHILE (qs, phi) -> eval_tac_R_WHILE_WHILE proof_f qs phi
           | R_MEAS_MEAS switch -> eval_tac_R_MEAS_MEAS proof_f switch
           | R_MEAS_SAMPLE switch -> eval_tac_R_MEAS_SAMPLE proof_f switch
+          | R_DUALITY          -> eval_tac_R_DUALITY proof_f
 
           | JUDGE_SWAP        -> eval_tac_JUDGE_SWAP proof_f
           | CQ_ENTAIL         -> eval_tac_CQ_ENTAIL proof_f
@@ -1045,6 +1047,77 @@ and eval_tac_R_SEQ (f: proof_frame) (n1: int) (n2: int) (t : terms): tactic_resu
         | _ -> TacticError (Printf.sprintf "The tactic is not applicable to the current goal")
 
 (** 
+  r_sample
+
+  x : CVar[T]     phi <= Exp[mu, fun (v : CTerm[T]) => psi[v/x]]
+  -----------------------------------------------
+  { phi } x <-$ mu ~ skip { psi }
+*)
+and eval_tac_R_SAMPLE (f: proof_frame) : tactic_result =
+  match f.goals with
+  | [] -> TacticError "Nothing to prove."
+  | (ctx, hd) :: tl ->
+      begin
+        match hd with
+        | Fun {head=head; args=[pre; Fun {head=head_s1; args=[stt1]}; Fun {head=head_s2; args=[stt2]}; post]} when
+            head = _judgement && head_s1 = _seq && head_s2 = _seq ->
+            let wfctx = get_pf_wfctx f in
+            begin
+                let handle_case x mu_term =
+                  match calc_type wfctx mu_term with
+                  | Type (Fun {head=head_mu; args=[sample_t]}) when head_mu = _pdist ->
+                      begin
+                        match type_check wfctx (Symbol x) (Fun {head=_cvar; args=[sample_t]}) with
+                        | TypeError msg ->
+                            TacticError (Printf.sprintf "%s cannot be typed as CVar[%s]. %s" x (term2str sample_t) msg)
+                        | Type _ ->
+                            let avoid = get_symbols pre @ get_symbols post @ get_symbols mu_term @ [x] in
+                            let binder = fresh_name avoid "v" in
+                            let param_ty = Fun {head=_cterm; args=[sample_t]} in
+                            let binder_ctx = {
+                              wfctx with
+                              ctx = Assumption {name=binder; t=param_ty} :: wfctx.ctx
+                            } in
+                            let psi_body = substitute post x (Symbol binder) in
+                            begin match calc_type binder_ctx psi_body with
+                            | Type body_ty when is_assn_type body_ty ->
+                                let expectation_fun = Fun {head=_fun; args=[Symbol binder; param_ty; psi_body]} in
+                                let expectation_term = Fun {head=_exp; args=[mu_term; expectation_fun]} in
+                                let entailment_goal = Fun {head=_entailment; args=[pre; expectation_term]} in
+                                let new_frame = {
+                                  env = f.env;
+                                  proof_name = f.proof_name;
+                                  proof_prop = f.proof_prop;
+                                  goals = (ctx, entailment_goal) :: tl;
+                                  lean_goals = f.lean_goals;
+                                  rocq_goals = f.rocq_goals;
+                                } in
+                                Success (ProofFrame new_frame)
+                            | Type body_ty ->
+                                TacticError (Printf.sprintf "The expectation body %s is typed as %s instead of an Assn." (term2str psi_body) (term2str body_ty))
+                            | TypeError msg ->
+                                TacticError (Printf.sprintf "Cannot type the expectation body %s. %s" (term2str psi_body) msg)
+                            end
+                      end
+                  | Type _ ->
+                      TacticError (Printf.sprintf "%s is not typed as PDist[T]." (term2str mu_term))
+                  | TypeError msg ->
+                      TacticError (Printf.sprintf "%s is not well typed as a distribution. %s" (term2str mu_term) msg)
+                in
+                begin match stt1, stt2 with
+                | Fun {head=head1; args=[Symbol x; mu_term]}, Symbol sym2 when head1 = _passign && sym2 = _skip ->
+                    handle_case x mu_term
+                | Symbol sym1, Fun {head=head2; args=[Symbol x; mu_term]} when sym1 = _skip && head2 = _passign ->
+                    handle_case x mu_term
+                | _ ->
+                    TacticError (Printf.sprintf "The tactic must apply to [x <-$ mu; ~ skip;] or [skip; ~ x <-$ mu;], but found %s" (term2str hd))
+                end
+            end
+        | _ ->
+            TacticError (Printf.sprintf "The tactic is not applicable to the current goal: %s" (term2str hd))
+      end
+
+(** 
   r_initq
 
   ( psi | (Sum i in USet, |i><0|_(q,q) A |0><i|_(q,q)) <= (phi /\ (true -> |0><0|_(q,q))) | B 
@@ -1499,6 +1572,72 @@ and eval_tac_R_MEAS_SAMPLE (f: proof_frame) (switch: bool): tactic_result =
 
       | _ -> TacticError (Printf.sprintf "The tactic is not applicable to the current goal")
 
+and eval_tac_R_DUALITY (f: proof_frame) : tactic_result =
+  match f.goals with
+  | [] -> TacticError "Nothing to prove."
+  | (ctx, hd) :: tl ->
+  (* | _ :: tl -> *)
+    let wfctx = get_pf_wfctx f in 
+    match hd with 
+    | Fun {head=head; args=[
+      Fun {head=head_pre; args=[phi; a]};
+      c1;
+      c2;
+      Fun {head=head_post; args=[psi; b]}]} when 
+      (
+        head = _judgement && 
+        head_pre = _vbar &&
+        head_post = _vbar
+      ) ->
+      (* c1, c2 AST *)
+      let n = fresh_name_for_ctx wfctx "n" in 
+      let gamma = fresh_name_for_ctx wfctx "gamma" in
+      let omega = fresh_name_for_ctx wfctx "omega" in
+      let qvls1 = get_prog_qvlist wfctx c1 in
+      let qvls2 = get_prog_qvlist wfctx c2 in
+      let qvls_combined = merge_qvlist_results qvls1 qvls2 in
+      let dtype1 = dtype_from_qvlist_result qvls1 in
+      let dtype2 = dtype_from_qvlist_result qvls2 in
+      let idleft = labelled_identity_from_qvlist_result wfctx qvls_combined in
+      let idright1 = labelled_identity_from_qvlist_result wfctx qvls1 in
+      let idright2 = labelled_identity_from_qvlist_result wfctx qvls2 in
+      let cvls1 = get_prog_cvlist wfctx c1 in
+      let cvls2 = get_prog_cvlist wfctx c2 in
+      let gamma_type = cvlist_to_function_type wfctx cvls1 dtype1 in
+      let omega_type = cvlist_to_function_type wfctx cvls2 dtype2 in
+      let gamma_term = cvlist_apply_function (Symbol gamma) cvls1 in
+      let omega_term = cvlist_apply_function (Symbol omega) cvls2 in
+      let hypo = fresh_name_for_ctx wfctx "H" in
+      let goal_template = parse_terms ("forall (" ^ n ^ " : SType), forall (" ^ gamma ^ ": gammatype), forall (" ^ omega ^ ": omegatype), forall ("^hypo^": gammaterm * idright2 + idright1 * omegaterm <= b + "^n^" @ idleft), {phi | a + ("^n^" @ idleft)} c1 ~ c2 {psi | gammaterm * idright2 + idright1 * omegaterm}") in
+      let s = [
+        ("gammatype", gamma_type);
+        ("omegatype", omega_type);
+        ("c1", c1);
+        ("c2", c2);
+        ("idleft", idleft);
+        ("phi", phi);
+        ("psi", psi);
+        ("a", a);
+        ("b", b);
+        ("gammaterm", gamma_term);
+        ("omegaterm", omega_term);
+        ("idright1", idright1);
+        ("idright2", idright2);
+      ]
+      in
+      let goal = apply_subst_unique_var s goal_template in
+      begin
+        let new_frame = {
+          env         = f.env;
+          proof_name  = f.proof_name;
+          proof_prop  = f.proof_prop;
+          goals       = (ctx, goal) :: tl;
+          lean_goals = f.lean_goals;
+          rocq_goals = f.rocq_goals;
+        } in
+        Success (ProofFrame new_frame)
+      end
+    | _ -> TacticError (Printf.sprintf "The tactic is not applicable to the current goal")
 
 and eval_tac_JUDGE_SWAP (f: proof_frame) : tactic_result =
   match f.goals with

@@ -14,13 +14,13 @@
 
 (* token for tactics *)
 %token SORRY EXPAND REFL DESTRUCT CASE INTRO REVERT APPLY CHOOSE SPLIT BYLEAN BYROCQ SIMPL REWRITE RWRULE
-%token R_PRE R_POST R_SKIP R_SEQ R_ASSIGN R_INITQ R_UNITARY R_MEAS R_IF R_WHILE R_WHILE_WHILE R_MEAS_MEAS R_MEAS_SAMPLE SWITCH_ID SWITCH_SWAP
+%token R_PRE R_POST R_SKIP R_SEQ R_ASSIGN R_SAMPLE R_INITQ R_UNITARY R_MEAS R_IF R_WHILE R_WHILE_WHILE R_MEAS_MEAS R_MEAS_SAMPLE R_DUALITY SWITCH_ID SWITCH_SWAP
 %token JUDGE_SWAP CQ_ENTAIL DIRAC SIMPL_ENTAIL STRONG_ENTAIL ENTAIL_TRANS CYLINDER_EXT
 
 %token FORALL FUN TYPE TR
 
 (* token for Dirac notation *)
-%token ONEO ZEROO
+%token ONEO ZEROO ONES
 
 (* token for programs *)
 %token SKIP INIT UNITARY_PROG MEAS IF THEN ELSE WHILE DO END
@@ -118,6 +118,7 @@ tactic:
   | R_SKIP PERIOD                     { R_SKIP }
   | R_SEQ n1 = NUM n2 = NUM t = terms PERIOD { R_SEQ (n1, n2, t) }
   | R_ASSIGN PERIOD                   { R_ASSIGN }
+  | R_SAMPLE PERIOD                   { R_SAMPLE }
   | R_INITQ PERIOD                    { R_INITQ }
   | R_UNITARY PERIOD                  { R_UNITARY }
   | R_MEAS PERIOD                     { R_MEAS }
@@ -128,6 +129,7 @@ tactic:
   | R_MEAS_MEAS SWITCH_SWAP PERIOD    { R_MEAS_MEAS false }
   | R_MEAS_SAMPLE SWITCH_ID PERIOD    { R_MEAS_SAMPLE true }
   | R_MEAS_SAMPLE SWITCH_SWAP PERIOD  { R_MEAS_SAMPLE false }
+  | R_DUALITY PERIOD                  { R_DUALITY }
 
   | JUDGE_SWAP PERIOD                 { JUDGE_SWAP }
   | CQ_ENTAIL PERIOD                  { CQ_ENTAIL }
@@ -161,6 +163,7 @@ terms:
 
   | ZEROO LBRACK t = terms RBRACK { Fun {head=_zeroo; args=[t; t]} }
   | ZEROO LBRACK t1 = terms COMMA t2 = terms RBRACK { Fun {head=_zeroo; args=[t1; t2]} }
+  | ONES { Symbol _ones }
   | ONEO LBRACK t = terms RBRACK { Fun {head=_oneo; args=[t]} }
 
   | t1 = terms PLUS t2 = terms { Fun {head=_plus; args=[t1; t2]} }

@@ -95,6 +95,7 @@ rule token = parse
     | "r_skip"                      { R_SKIP }
     | "r_seq"                       { R_SEQ }
     | "r_assign"                    { R_ASSIGN }
+    | "r_sample"                    { R_SAMPLE }
     | "r_initq"                     { R_INITQ }
     | "r_unitary"                   { R_UNITARY }
     | "r_meas"                      { R_MEAS }
@@ -103,6 +104,7 @@ rule token = parse
     | "r_while_while"               { R_WHILE_WHILE }
     | "r_meas_meas"                 { R_MEAS_MEAS }
     | "r_meas_sample"               { R_MEAS_SAMPLE }
+    | "r_duality"                   { R_DUALITY }
     | "id"                          { SWITCH_ID }
     | "swap"                        { SWITCH_SWAP }
     
@@ -133,6 +135,7 @@ rule token = parse
 
     | "0O"                          { ZEROO }
     | "1O"                          { ONEO }
+    | "1S"                          { ONES }
 
     | id as v                       { ID v }
     | eof                           { EOF }

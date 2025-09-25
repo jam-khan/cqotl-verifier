@@ -37,6 +37,7 @@ and tactic =
   | R_SKIP
   | R_SEQ of int * int * terms
   | R_ASSIGN
+  | R_SAMPLE
   | R_INITQ
   | R_UNITARY
   | R_MEAS
@@ -45,6 +46,7 @@ and tactic =
   | R_WHILE_WHILE of terms * terms
   | R_MEAS_MEAS of bool
   | R_MEAS_SAMPLE of bool
+  | R_DUALITY
   | JUDGE_SWAP
   | CQ_ENTAIL
   | DIRAC
@@ -188,6 +190,7 @@ let _bra      = "BRA"
 let _adj      = "ADJ"
 let _zeroo    = "ZEROO"
 let _oneo     = "ONEO"
+let _ones     = "ONES"
 let _plus     = "PLUS"
 let _sum      = "SUM"
 let _tr       = "tr"
@@ -212,6 +215,7 @@ let _atat       = "ATAT"
 let _guarded    = "GUARDED"
 
 let _vbar       = "VBAR"
+let _exp        = "Exp"
 
 let _seq        = "SEQ"
 let _skip       = "SKIP"
@@ -272,6 +276,7 @@ let reserved_symbols = [
   _adj;
   _zeroo;
   _oneo;
+  _ones;
   _plus;
   _sum;
   _tr;
@@ -293,6 +298,7 @@ let reserved_symbols = [
   _atat;
 
   _vbar;
+  _exp;
 
   _seq;
   _skip;

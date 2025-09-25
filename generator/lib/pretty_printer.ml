@@ -1,6 +1,5 @@
 open Ast
 
-
 let rec command_list_2_str (cs: command list) : string =
     let format_command (c: command) : string = command2str c 
     in  let command_strs = List.map format_command cs 
@@ -77,6 +76,8 @@ and tactic2str (t: tactic) : string =
         Printf.sprintf "r_seq %d %d %s." n1 n2 (term2str t)
     | R_ASSIGN            -> 
         "r_assign."
+    | R_SAMPLE            -> 
+        "r_sample."
     | R_INITQ             -> 
         "r_initq."
     | R_UNITARY           -> 
@@ -93,6 +94,8 @@ and tactic2str (t: tactic) : string =
         if switch then "r_meas_meas id." else "r_meas_meas swap."
     | R_MEAS_SAMPLE switch-> 
         if switch then "r_meas_sample id." else "r_meas_sample swap."
+    | R_DUALITY           ->
+        "r_duality."
     | JUDGE_SWAP          -> 
         "judge_swap."
     | CQ_ENTAIL           -> 
@@ -139,6 +142,8 @@ and term2str (e: terms) : string =
         Printf.sprintf "0O[%s, %s]" (term2str t1) (term2str t2)
     | Fun {head; args=[t]} when head = _oneo                    ->
         Printf.sprintf "1O[%s]" (term2str t)
+    | Symbol sym when sym = _ones                               ->
+        "1S"
 
     | Fun {head; args=[t1; t2]} when head = _plus               ->
         Printf.sprintf "(%s + %s)" (term2str t1) (term2str t2)
@@ -248,3 +253,13 @@ let subst2str (s : subst) : string =
         Printf.sprintf "%s := %s" x (term2str t) in
     let subst_strs = List.map format_subst s in
     "{" ^ (String.concat ", " subst_strs) ^ "}"
+
+
+
+let termls_result_2_str (res: termls_result) : string =
+  match res with
+  | TermList tls    -> 
+      let tls_str = List.map term2str tls |> String.concat ", " in
+      Printf.sprintf "[%s]" tls_str
+  | TermError msg   -> 
+      Printf.sprintf "TermError: %s" msg

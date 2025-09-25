@@ -3,20 +3,6 @@ open Ast_transform
 open Pretty_printer
 open Utils
 
-(** the function to calculate the qvlist from the qreg term *)
-let rec get_qvlist (qreg : terms) : termls_result =
-  match qreg with
-  | Symbol _ -> TermList [qreg]
-  | Fun {head; args=[t1; t2]} when head=_pair ->
-    let t1_list = get_qvlist t1 in
-    let t2_list = get_qvlist t2 in
-    ( match t1_list, t2_list with
-      | TermList l1,  TermList l2 -> TermList (l1 @ l2)
-      | TermError msg, _          -> TermError msg
-      | _, TermError msg          -> TermError msg
-    )
-  | _ -> TermError "Cannot calculate the quantum variable list for the given term."
-
 (* return a fresh name for the context *)
 let fresh_name_for_ctx (ctx: wf_ctx) (prefix : string): string =
   (* Helper function to get all symbols in an environment list *)
@@ -48,6 +34,193 @@ let find_item (wfctx: wf_ctx) (name: string) : envItem option =
     match env_res with
     | Some _ -> env_res
     | None -> None
+
+(** the function to calculate the qvlist from the qreg term *)
+let rec get_qvlist (qreg : terms) : termls_result =
+  match qreg with
+  | Symbol _ -> TermList [qreg]
+  | Fun {head; args=[t1; t2]} when head=_pair ->
+    let t1_list = get_qvlist t1 in
+    let t2_list = get_qvlist t2 in
+    ( match t1_list, t2_list with
+      | TermList l1,  TermList l2 -> TermList (l1 @ l2)
+      | TermError msg, _          -> TermError msg
+      | _, TermError msg          -> TermError msg
+    )
+  | _ -> TermError "Cannot calculate the quantum variable list for the given term."
+
+let merge_qvlist_results (r1 : termls_result) (r2 : termls_result) : termls_result =
+  match r1, r2 with
+  | TermError msg, _ -> TermError msg
+  | _, TermError msg -> TermError msg
+  | TermList l1, TermList l2 -> TermList (list_union l1 l2)
+
+let is_assn_type (t : terms) : bool =
+  match t with
+  | Symbol sym when sym = _assn -> true
+  | _ -> false
+
+let is_cqproj_type (t : terms) : bool =
+  match t with
+  | Symbol sym when sym = _cqproj -> true
+  | _ -> false
+
+let types_equal (t1 : terms) (t2 : terms) : bool =
+  match t1, t2 with
+  | Symbol sym1, Symbol sym2 when
+      (sym1 = _assn && sym2 = _assn) || (sym1 = _assn && sym2 = _assn) -> true
+  | _ -> t1 = t2
+
+let rec get_prog_qvlist (wfctx : wf_ctx) (prog : terms) : termls_result =
+  match prog with
+  | Symbol sym when sym = _skip -> TermList []
+  | Fun {head; args} when head = _seq ->
+      List.fold_left
+        (fun acc stmt ->
+          match acc with
+          | TermError _ -> acc
+          | TermList _ -> merge_qvlist_results acc (get_prog_qvlist wfctx stmt)
+        )
+        (TermList [])
+        args
+  | Fun {head; args=[Symbol _; _]} when head = _assign -> TermList []
+  | Fun {head; args=[Symbol _; _]} when head = _passign -> TermList []
+  | Fun {head; args=[qs]} when head = _init_qubit -> get_qvlist qs
+  | Fun {head; args=[_; qs]} when head = _unitary -> get_qvlist qs
+  | Fun {head; args=[Symbol _; _; qs]} when head = _meas -> get_qvlist qs
+  | Fun {head; args=[_; s1; s2]} when head = _if ->
+      merge_qvlist_results (get_prog_qvlist wfctx s1) (get_prog_qvlist wfctx s2)
+  | Fun {head; args=[_; body]} when head = _while -> get_prog_qvlist wfctx body
+  | Symbol x ->
+      begin
+        match find_item wfctx x with
+        | Some (Definition {t; e; _}) ->
+            begin
+              match t with
+              | Symbol sym when sym = _prog || sym = _progstt -> get_prog_qvlist wfctx e
+              | _ -> TermError (Printf.sprintf "%s is not typed as Prog or ProgStt." x)
+            end
+        | Some (Assumption _) ->
+            TermError (Printf.sprintf "Cannot extract qvlist from assumed program %s." x)
+        | None -> TermError (Printf.sprintf "The term %s is not defined or assumed." x)
+      end
+  | _ -> TermError (Printf.sprintf "Cannot extract qvlist from %s." (term2str prog))
+
+let rec get_term_cvlist (wfctx : wf_ctx) (term : terms) : termls_result =
+  match term with
+  | Symbol sym ->
+      begin
+        match find_item wfctx sym with
+        | Some (Assumption {t; _})
+        | Some (Definition {t; _}) ->
+            begin
+              match t with
+              | Fun {head; args=[_]} when head = _cvar -> TermList [Symbol sym]
+              | _ -> TermList []
+            end
+        | None -> TermList []
+      end
+  | Fun {head=_; args} ->
+      List.fold_left
+        (fun acc arg ->
+          match acc with
+          | TermError _ -> acc
+          | TermList _ -> merge_qvlist_results acc (get_term_cvlist wfctx arg)
+        )
+        (TermList [])
+        args
+  | Opaque -> TermList []
+
+let rec get_prog_cvlist (wfctx : wf_ctx) (prog : terms) : termls_result =
+  match prog with
+  | Symbol sym when sym = _skip -> TermList []
+  | Fun {head; args} when head = _seq ->
+      List.fold_left
+        (fun acc stmt ->
+          match acc with
+          | TermError _ -> acc
+          | TermList _ -> merge_qvlist_results acc (get_prog_cvlist wfctx stmt)
+        )
+        (TermList [])
+        args
+  | Fun {head; args=[Symbol x; t]} when head = _assign ->
+      merge_qvlist_results
+        (get_term_cvlist wfctx (Symbol x))
+        (get_term_cvlist wfctx t)
+  | Fun {head; args=[Symbol x; mu]} when head = _passign ->
+      merge_qvlist_results
+        (get_term_cvlist wfctx (Symbol x))
+        (get_term_cvlist wfctx mu)
+  | Fun {head; args=[_]} when head = _init_qubit -> TermList []
+  | Fun {head; args=[_; _]} when head = _unitary -> TermList []
+  | Fun {head; args=[Symbol x; _; _]} when head = _meas ->
+      get_term_cvlist wfctx (Symbol x)
+  | Fun {head; args=[b; s1; s2]} when head = _if ->
+      merge_qvlist_results
+        (get_term_cvlist wfctx b)
+        (merge_qvlist_results
+          (get_prog_cvlist wfctx s1)
+          (get_prog_cvlist wfctx s2))
+  | Fun {head; args=[b; body]} when head = _while ->
+      merge_qvlist_results
+        (get_term_cvlist wfctx b)
+        (get_prog_cvlist wfctx body)
+  | Symbol x ->
+      begin
+        match find_item wfctx x with
+        | Some (Definition {t; e; _}) ->
+            begin
+              match t with
+              | Symbol sym when sym = _prog || sym = _progstt -> get_prog_cvlist wfctx e
+              | _ -> TermError (Printf.sprintf "%s is not typed as Prog or ProgStt." x)
+            end
+        | Some (Assumption _) ->
+            TermError (Printf.sprintf "Cannot extract cvlist from assumed program %s." x)
+        | None -> TermError (Printf.sprintf "The term %s is not defined or assumed." x)
+      end
+  | _ -> TermError (Printf.sprintf "Cannot extract cvlist from %s." (term2str prog))
+
+let cvlist_to_function_type (wfctx : wf_ctx) (cvres : termls_result) (target_type : terms) : terms =
+  let rec build_type vars acc =
+    match vars with
+    | [] -> acc
+    | Symbol sym :: rest ->
+        let cterm_type =
+          match find_item wfctx sym with
+          | Some (Assumption {t; _})
+          | Some (Definition {t; _}) ->
+              begin
+                match t with
+                | Fun {head; args=[ctype]} when head = _cvar -> Fun {head=_cterm; args=[ctype]}
+                | _ -> failwith (Printf.sprintf "%s is not typed as CVar." sym)
+              end
+          | None -> failwith (Printf.sprintf "The term %s is not defined or assumed." sym)
+        in
+        Fun {head=_forall; args=[Symbol sym; cterm_type; build_type rest acc]}
+    | _ :: _ -> failwith "cvlist_to_function_type: classical variable list should contain only symbols."
+  in
+  match cvres with
+  | TermError msg -> failwith msg
+  | TermList vars -> build_type vars target_type
+
+let cvlist_apply_function (fun_term : terms) (cvres : termls_result) : terms =
+  let rec apply term vars =
+    match vars with
+    | [] -> term
+    | Symbol sym :: rest ->
+        apply (Fun {head=_apply; args=[term; Symbol sym]}) rest
+    | _ :: _ -> failwith "cvlist_apply_function: classical variable list should contain only symbols."
+  in
+  match cvres with
+  | TermError msg -> failwith msg
+  | TermList vars -> apply fun_term vars
+
+let dtype_from_qvlist_result (qres : termls_result) : terms =
+  match qres with
+  | TermError msg -> failwith msg
+  | TermList qs ->
+      let qlist = Fun {head=_list; args=qs} in
+      Fun {head=_dtype; args=[qlist; qlist]}
 
 (** check whether the term is of [Type[Type[...]]] form 
   If yes, return the level of the type. (Type is at level 1)*)
@@ -321,7 +494,7 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
   | Symbol sym when sym = _cqproj -> Type (Symbol _type)
 
   (* Assn *)
-  | Symbol sym when sym = _assn -> Type (Symbol _type)
+  | Symbol sym when sym = _assn || sym = _assn -> Type (Symbol _type)
 
   (*** typing for program statements ***)
   (* seq *)
@@ -695,6 +868,9 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
   | Symbol sym when sym = _bottom ->
     Type (Fun {head= _dtype; args=[Fun{head=_list; args=[]}; Fun{head=_list; args=[]}]})
 
+  | Symbol sym when sym = _ones ->
+    Type (Fun {head=_dtype; args=[Fun{head=_list; args=[]}; Fun{head=_list; args=[]}]})
+
   (* uset *)
   | Fun {head; args=[t]} when head = _uset ->
     begin
@@ -938,8 +1114,8 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           match type_t1, type_t2 with
 
           (* unitary transformation on ASSN *)
-          | Fun {head=head1; _}, Symbol head2 when head1 = _dtype && head2 = _assn ->
-            Type (Symbol _assn)
+          | Fun {head=head1; _}, Symbol head2 when head1 = _dtype && (head2 = _assn || head2 = _assn) ->
+            Type (Symbol head2)
           
           (* unitary transformation on CQPROJ *)
           | Fun {head=head1; _}, Symbol head2 when head1 = _dtype && head2 = _cqproj ->
@@ -959,6 +1135,38 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           | _ -> TypeError (Printf.sprintf "%s typing failed." (term2str s))
         end
       | _ -> TypeError (Printf.sprintf "%s typing failed. %s or %s is not well typed." (term2str s) (term2str t1) (term2str t2))
+    end
+
+  (* probabilistic expectation *)
+  | Fun {head; args=[mu; f]} when head = _exp ->
+    begin
+      match calc_type wfctx mu with
+      | Type (Fun {head=head_mu; args=[t]}) when head_mu = _pdist ->
+        begin
+          match calc_type wfctx f with
+          | Type type_f ->
+            begin
+              match type_f with
+              | Fun {head=head_forall; args=[Symbol _; param_t; body_t]} when head_forall = _forall ->
+                begin
+                  match param_t with
+                  | Fun {head=head_param; args=[sample_t]} when head_param = _cterm ->
+                    if sample_t = t then
+                      if is_assn_type body_t then
+                        Type (Symbol _assn)
+                      else
+                        TypeError (Printf.sprintf "%s typing failed. %s is not typed as CQAssn." (term2str s) (term2str f))
+                    else
+                      TypeError (Printf.sprintf "%s typing failed. %s and %s do not have the same classical type." (term2str s) (term2str mu) (term2str f))
+                  | _ ->
+                    TypeError (Printf.sprintf "%s typing failed. %s is not typed as forall (v : CTerm[%s]), CQAssn." (term2str s) (term2str f) (term2str t))
+                end
+              | _ ->
+                TypeError (Printf.sprintf "%s typing failed. %s is not typed as forall (v : CTerm[%s]), CQAssn." (term2str s) (term2str f) (term2str t))
+            end
+          | TypeError msg -> TypeError (Printf.sprintf "%s typing failed. %s is not well typed. %s" (term2str s) (term2str f) msg)
+        end
+      | _ -> TypeError (Printf.sprintf "%s typing failed. %s is not typed as PDist." (term2str s) (term2str mu))
     end
 
   (* vbar (cq-assertion) *)
@@ -1025,7 +1233,7 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
           | _ when type_t1 = Symbol _cqproj && type_t2 = Symbol _cqproj -> Type (Symbol _type)
 
           (* assertion entailment *)
-          | _ when type_t1 = Symbol _assn && type_t2 = Symbol _assn ->
+          | _ when is_assn_type type_t1 && is_assn_type type_t2 ->
             Type (Symbol _type)
 
           (* operator entailment *)
@@ -1048,7 +1256,7 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
     begin
       match calc_type wfctx pre, calc_type wfctx s1, calc_type wfctx s2, calc_type wfctx post with
       | Type type_pre, Type type_s1, Type type_s2, Type type_post ->
-        if type_pre = Symbol _assn && type_s1 = Symbol _prog && type_s2 = Symbol _prog && type_post = Symbol _assn then
+        if is_assn_type type_pre && type_s1 = Symbol _prog && type_s2 = Symbol _prog && is_assn_type type_post then
           Type (Symbol _type)
         else
           TypeError (Printf.sprintf "%s typing failed." (term2str s))
@@ -1107,7 +1315,7 @@ and type_check (wfctx : wf_ctx) (s : terms) (t : terms) : typing_result =
   | Type type_t ->
       match type_t, t with
       (* the same type *)
-      | _, _ when t = type_t -> Type t
+      | _, _ when types_equal type_t t -> Type t
       (* cvar -> cterm *)
       | Fun {head=head1; args=[t']}, Fun {head=head2; args=[t'']} when 
         head1 = _cvar && head2 = _cterm && t' = t'' -> 
@@ -1231,4 +1439,42 @@ and term_synthesize (wfctx: wf_ctx) (t: terms) : bool =
       (* Printf.printf "Synthesis failed.\n"; *)
       false
     end
+
+let labelled_identity_from_qvlist_result (wfctx : wf_ctx) (qres : termls_result) : terms =
+  let rec build_qreg wfctx qvs =
+    match qvs with
+    | [] -> None
+    | [qv] ->
+        begin
+          match calc_type wfctx qv with
+          | Type (Fun {head; args=[tt]}) when head = _qreg -> Some (tt, qv)
+          | _ -> None
+        end
+    | qv :: rest ->
+        begin
+          match calc_type wfctx qv, build_qreg wfctx rest with
+          | Type (Fun {head=head1; args=[tt]}), Some (tt', qreg_rest) when head1 = _qreg ->
+              Some (
+                Fun {head=_star; args=[tt; tt']},
+                Fun {head=_pair; args=[qv; qreg_rest]}
+              )
+          | _ -> None
+        end
+  in
+  match qres with
+  | TermError msg -> failwith ("Cannot build labelled identity from invalid quantum variable list: " ^ msg)
+  | TermList [] -> Symbol _ones
+  | TermList qs ->
+      begin
+        match build_qreg wfctx qs with
+        | Some (tt, qreg_term) ->
+            Fun {
+              head = _subscript;
+              args = [
+                Fun {head=_oneo; args=[tt]};
+                Fun {head=_pair; args=[qreg_term; qreg_term]}
+              ];
+            }
+        | None -> failwith "Cannot build labelled identity from invalid quantum variable list."
+      end
       

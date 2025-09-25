@@ -1,0 +1,86 @@
+
+Var Bern1'4 : PDist[bit].
+Var H : OType[bit, bit].
+
+Prove pfHUnitary : UOpt[H].
+    sorry.
+QED.
+
+Var P0 : OType[bit, bit].
+Var P1 : OType[bit, bit].
+
+Prove pfProjMeasOpt: ProjMeasOptPair[(P0, P1)].
+    sorry. 
+QED.
+
+Var and : forall (a : CTerm[bit]), forall (b : CTerm[bit]), CTerm[bit].
+
+
+Prove Bernoulli : forall (x : CVar[bit]), 
+    forall (q1' : QReg[bit]), forall (b1' : CVar[bit]),
+    forall (q2' : QReg[bit]), forall (b2' : CVar[bit]),
+    forall (x' : CVar[bit]),
+        { false -> 0O[bit]_(q1', q1') | 0O[bit]_(q1', q1') }
+            x <-$ Bern1'4;
+                ~
+            init q1';
+            unitary H q1';
+            b1' := meas (P0, P1) q1';
+            init q2';
+            unitary H q2';
+            b2' := meas (P0, P1) q2';
+            x' := and @ b1' @ b2';
+        { ~(x == x') -> 0O[bit]_(q1', q1') | 0O[bit]_(q1', q1') }.
+
+    intro x. intro q1'. intro b1'. intro q2'. intro b2'. intro x'.
+
+    r_seq 1 -1 ~(x == and @ b1' @ b2') -> 0O[bit]_(q1', q1') | 0O[bit]_(q1', q1').
+    choose 2.
+    r_assign. simpl_entail. refl.
+
+    (* Pause. *)
+    r_duality.
+
+    intro n.
+    intro gamma.
+    intro omega.
+    intro H.
+    
+    (* start backward transformation *)
+
+    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | ((P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2'))) /\ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2'))))).
+    choose 2.
+        r_meas. simpl_entail. simpl. sorry.
+
+    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))).
+    choose 2.
+        r_unitary. dirac. simpl_entail. simpl. cq_entail. simpl. intro Hx. simpl_entail. refl.
+
+    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))]).
+    choose 2.
+        r_initq. simpl_entail. simpl. cq_entail. intro Hx. simpl. dirac. simpl_entail. refl.
+
+    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1') | ((P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1'))) /\ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))))).
+    choose 2.
+        r_meas. simpl_entail. simpl. cq_entail. intro Hx. simpl. simpl_entail. refl.
+
+    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | ((((H^D)_(q1', q1') @ (P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1')))) @ H_(q1', q1')) /\ (((H^D)_(q1', q1') @ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))) @ H_(q1', q1')))).
+    choose 2.
+        r_unitary. dirac. simpl_entail. refl.
+
+    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q1', q1') @ ((((H^D)_(q1', q1') @ (P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1')))) @ H_(q1', q1')) /\ (((H^D)_(q1', q1') @ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))) @ H_(q1', q1')))) @ (|false> @ <i|)_(q1', q1')))]).
+    choose 2.
+        r_initq. simpl_entail. simpl. cq_entail. intro Hx. simpl. dirac. simpl_entail. refl.
+
+
+    r_sample.
+
+    (* lean obligation *)
+    sorry.
+
+QED.
+    
+
+    
+
+
