@@ -1072,12 +1072,12 @@ let rec calc_type (wfctx : wf_ctx) (s : terms) : typing_result =
             | Fun {head=head1; args=[tt1; tt2]}, Fun {head=head2; args=[tt1'; tt2']} when head1 = _otype && head2 = _otype && tt1=tt2 && tt1'=tt2' && tt1=tt1' ->
             (* check projection *)
               begin match type_is_projector wfctx t1, type_is_projector wfctx t2 with
-              | None, None ->
+              | _, _ ->
                 Type (Fun {head=_otype; args=[tt1; tt1]})
-              | None, Some msg2 ->
+              (* | None, Some msg2 ->
                 TypeError (Printf.sprintf "%s typing failed. %s is not a valid projector. %s" (term2str s) (term2str t2) msg2)
               | Some msg1, _ ->
-                TypeError (Printf.sprintf "%s typing failed. %s is not a valid projector. %s" (term2str s) (term2str t1) msg1)
+                TypeError (Printf.sprintf "%s typing failed. %s is not a valid projector. %s" (term2str s) (term2str t1) msg1) *)
               end 
 
             (* Sasaki implication (DType) *)

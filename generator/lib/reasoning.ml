@@ -120,6 +120,9 @@ let simpl_rules = [
   parse_rw_rule "~ false --> true";
 
   parse_rw_rule "(~ b1 -> 0O[T, T]_(q, q)) /\\ (~ b2 -> 0O[T, T]_(q, q)) --> (~ (b1 /\\ b2) -> 0O[T, T]_(q, q))";
+
+  parse_rw_rule "1S * A --> A";
+  parse_rw_rule "A * 1S --> A";
 ]
 
 
@@ -487,7 +490,7 @@ let _measure_wp_goal (x : string) (pre: terms) (post: terms) (m_opt: terms) (q: 
         let wp_a_true =
           aux_a a (Fun{head=_subscript; args=[m1; pair_q]}) (Symbol _true) in
         (* return the goal *)
-        let wp = Fun {head=_vbar; args=[rhs; Fun {head=_wedge; args=[wp_a_false; wp_a_true]};]} in
+        let wp = Fun {head=_vbar; args=[rhs; Fun {head=_plus; args=[wp_a_false; wp_a_true]};]} in
         Some (Fun {head = _entailment; args = [wp; pre]})
       | None -> None
     end

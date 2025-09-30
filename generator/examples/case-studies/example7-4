@@ -9,11 +9,28 @@ QED.
 Var P0 : OType[bit, bit].
 Var P1 : OType[bit, bit].
 
+Prove pfP0Proj : POpt[P0].
+    sorry.
+QED.
+
+Prove pfP1Proj : POpt[P1].
+    sorry.
+QED.
+
 Prove pfProjMeasOpt: ProjMeasOptPair[(P0, P1)].
     sorry. 
 QED.
 
 Var and : forall (a : CTerm[bit]), forall (b : CTerm[bit]), CTerm[bit].
+
+Prove LemmaAndFalse1 : forall (a : CTerm[bit]), (and @ a @ false) = false.
+    sorry.
+QED.
+
+Prove LemmaAndTrue1 : forall (a : CTerm[bit]), (and @ a @ true) = a.
+    sorry.
+QED.
+
 
 
 Prove Bernoulli : forall (x : CVar[bit]), 
@@ -37,6 +54,7 @@ Prove Bernoulli : forall (x : CVar[bit]),
     r_seq 1 -1 ~(x == and @ b1' @ b2') -> 0O[bit]_(q1', q1') | 0O[bit]_(q1', q1').
     choose 2.
     r_assign. simpl_entail. refl.
+    
 
     (* Pause. *)
     r_duality.
@@ -45,35 +63,57 @@ Prove Bernoulli : forall (x : CVar[bit]),
     intro gamma.
     intro omega.
     intro H.
+
+    
     
     (* start backward transformation *)
-
-    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | ((P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2'))) /\ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2'))))).
+    r_seq 1 -1 ((((~ (x == false)) -> P1_(q2', q2')) /\ ((~ (x == b1')) -> P0_(q2', q2'))) | 
+        ((P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ false)) @ P0_(q2', q2'))) + 
+        (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ true)) @ P1_(q2', q2'))))).
     choose 2.
-        r_meas. simpl_entail. simpl. sorry.
 
-    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))).
+    r_meas. 
+    rewrite (LemmaAndFalse1 @ b1').
+    rewrite (LemmaAndTrue1 @ b1').
+    simpl. simpl_entail. simpl. cq_entail. split.
+        intro Hx. simpl. sorry.
+        intro Hx. simpl. sorry.
+
+    r_seq 1 -1 ((((~ (x == false)) -> P1_(q2', q2')) /\ ((~ (x == b1')) -> P0_(q2', q2'))) | 
+        (((H^D @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ false)) @ (P0 @ H)_(q2', q2'))) + 
+        ((H^D @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ true)) @ (P1 @ H)_(q2', q2'))))).
     choose 2.
-        r_unitary. dirac. simpl_entail. simpl. cq_entail. simpl. intro Hx. simpl_entail. refl.
+        r_unitary. dirac. simpl_entail. split.
+            cq_entail. simpl. split.
+            intro Hx. rewrite Hx. simpl. sorry.
+            intro Hx. rewrite Hx. simpl. sorry.
+            sorry.
 
-    r_seq 1 -1 (false -> 0O[bit]_(q1', q1') | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ b1') @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))]).
+    r_seq 1 -1 ((((~ (x == false)) -> P1_(q2', q2')) /\ ((~ (x == b1')) -> P0_(q2', q2'))) | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ b1') @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))]).
     choose 2.
-        r_initq. simpl_entail. simpl. cq_entail. intro Hx. simpl. dirac. simpl_entail. refl.
+        r_initq. simpl_entail. simpl. cq_entail. split. 
+            intro Hx. rewrite Hx. simpl. sorry.
+            intro Hx. rewrite Hx. simpl. sorry.
 
-    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1') | ((P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1'))) /\ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))))).
+
+    r_seq 1 -1 (((false -> 0O[bit]_(q1', q1'))) | ((P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1'))) + (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1'))))).
     choose 2.
-        r_meas. simpl_entail. simpl. cq_entail. intro Hx. simpl. simpl_entail. refl.
+    r_meas. simpl. simpl_entail. simpl. cq_entail. split.
+        intro Hx. rewrite Hx. simpl. sorry.
+        intro Hx. rewrite Hx. simpl. sorry.
+    
 
-    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | ((((H^D)_(q1', q1') @ (P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1')))) @ H_(q1', q1')) /\ (((H^D)_(q1', q1') @ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))) @ H_(q1', q1')))).
+    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | (((H^D)_(q1', q1') @ ((P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1'))) + (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1'))))) @ H_(q1', q1'))).
     choose 2.
         r_unitary. dirac. simpl_entail. refl.
 
-    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q1', q1') @ ((((H^D)_(q1', q1') @ (P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ false) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1')))) @ H_(q1', q1')) /\ (((H^D)_(q1', q1') @ (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D)_(q2', q2') @ (P0_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ false))) @ P0_(q2', q2')))) @ H_(q2', q2')) /\ (((H^D)_(q2', q2') @ (P1_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + (1S * ((omega @ true) @ true))) @ P1_(q2', q2')))) @ H_(q2', q2')))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1')))) @ H_(q1', q1')))) @ (|false> @ <i|)_(q1', q1')))]).
+    r_seq 1 -1 ((false -> 0O[bit]_(q1', q1')) | SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q1', q1') @ (((H^D)_(q1', q1') @ ((P0_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ false) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P0_(q1', q1'))) + (P1_(q1', q1') @ (SUM[USET[bit], (fun (i : CTerm[bit]) => (((|i> @ <false|)_(q2', q2') @ ((((H^D) @ P0)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ false)) @ (P0 @ H)_(q2', q2'))) + (((H^D) @ P1)_(q2', q2') @ ((((gamma @ x) * 1O[(bit * bit)]_((q1', q2'), (q1', q2'))) + ((omega @ true) @ true)) @ (P1 @ H)_(q2', q2'))))) @ (|false> @ <i|)_(q2', q2')))] @ P1_(q1', q1'))))) @ H_(q1', q1'))) @ (|false> @ <i|)_(q1', q1')))]).
     choose 2.
         r_initq. simpl_entail. simpl. cq_entail. intro Hx. simpl. dirac. simpl_entail. refl.
 
-
     r_sample.
+
+    Pause.
 
     (* lean obligation *)
     sorry.
