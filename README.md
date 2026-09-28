@@ -1,4 +1,4 @@
-# (Maybe Complete) Classical-Quantum Relational Hoare Logics
+# Classical-Quantum Program Verifier based on qqOTL (LICS'26)
 
 CQOTL combines an OCaml verification-condition generator with a Lean 4 development for relational Hoare logic over classical-quantum programs.
 
@@ -67,3 +67,27 @@ Refer to `docs/lean-integration.md` for the full translation pipeline and future
 - `docs/development.md` – macOS setup notes, build instructions, and troubleshooting.
 - `docs/generator.md` – architecture overview of the OCaml codebase.
 - `docs/examples.md` – catalogue of case studies shipped with the repository.
+
+## Citation
+
+### BibTeX
+```bibtex
+@InProceedings{barthe_et_al:LIPIcs.LICS.2026.15,
+  author =	{Barthe, Gilles and Gao, Minbo and Khan, Jam Kabeer Ali and Muis, Matthijs and Renison, Ivan and Sakabe, Keiya and Walter, Michael and Xu, Yingte and Yu, Tianshi and Zhou, Li},
+  title =	{{Complete Relational Logic for Infinite-Dimensional Quantum Programs with Unbounded Assertions}},
+  booktitle =	{41st Annual Symposium on Logic in Computer Science (LICS 2026)},
+  pages =	{15:1--15:28},
+  series =	{Leibniz International Proceedings in Informatics (LIPIcs)},
+  ISBN =	{978-3-95977-434-5},
+  ISSN =	{1868-8969},
+  year =	{2026},
+  volume =	{380},
+  editor =	{Faggian, Claudia and Katoen, Joost-Pieter},
+  publisher =	{Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  address =	{Dagstuhl, Germany},
+  URL =		{https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.LICS.2026.15},
+  URN =		{urn:nbn:de:0030-drops-268020},
+  doi =		{10.4230/LIPIcs.LICS.2026.15},
+  annote =	{Keywords: relational program logics, infinite-dimensional quantum programs, classical-quantum programs, linear relations, quantum optimal transport}
+}
+```
